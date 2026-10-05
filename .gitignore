@@ -8,3 +8,4 @@ out
 app/generated/prisma
 *.log
 .DS_Store
+.neon
