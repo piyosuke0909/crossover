@@ -3,26 +3,15 @@
 import { FormEvent, useState } from "react";
 import { upload } from "@vercel/blob/client";
 import { useRouter } from "next/navigation";
+import { Icon } from "@/components/icons";
 
-type Industry = {
-  id: string;
-  name: string;
-};
+type Industry = { id: string; name: string };
+type Props = { eventId: string; industries: Industry[] };
 
-type Props = {
-  eventId: string;
-  industries: Industry[];
-};
-
-export default function ProfileRegisterForm({
-  eventId,
-  industries,
-}: Props) {
+export default function ProfileRegisterForm({ eventId, industries }: Props) {
   const router = useRouter();
   const [photo, setPhoto] = useState<File | null>(null);
-  const [status, setStatus] = useState<
-    "idle" | "uploading" | "saving" | "error"
-  >("idle");
+  const [status, setStatus] = useState<"idle" | "uploading" | "saving" | "error">("idle");
   const [error, setError] = useState("");
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -38,14 +27,8 @@ export default function ProfileRegisterForm({
 
     try {
       setStatus("uploading");
-
       const blob = await upload(
-        "events/" +
-          eventId +
-          "/people/" +
-          crypto.randomUUID() +
-          "-" +
-          photo.name,
+        `events/${eventId}/people/${crypto.randomUUID()}-${photo.name}`,
         photo,
         {
           access: "public",
@@ -55,12 +38,9 @@ export default function ProfileRegisterForm({
       );
 
       setStatus("saving");
-
-      const response = await fetch("/api/events/" + eventId + "/register", {
+      const response = await fetch(`/api/events/${eventId}/register`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           company: {
             name: String(form.get("companyName") ?? ""),
@@ -69,9 +49,7 @@ export default function ProfileRegisterForm({
             address: String(form.get("address") ?? ""),
             websiteUrl: String(form.get("websiteUrl") ?? ""),
             industryId: String(form.get("industryId") ?? ""),
-            businessDescription: String(
-              form.get("businessDescription") ?? "",
-            ),
+            businessDescription: String(form.get("businessDescription") ?? ""),
             profile: String(form.get("companyProfile") ?? ""),
           },
           person: {
@@ -86,18 +64,10 @@ export default function ProfileRegisterForm({
         }),
       });
 
-      const data = (await response.json()) as {
-        companyId?: string;
-        error?: string;
-      };
+      const data = (await response.json()) as { companyId?: string; error?: string };
+      if (!response.ok || !data.companyId) throw new Error(data.error || "登録に失敗しました。");
 
-      if (!response.ok || !data.companyId) {
-        throw new Error(data.error || "登録に失敗しました。");
-      }
-
-      router.push(
-        "/events/" + eventId + "/companies/" + data.companyId,
-      );
+      router.push(`/events/${eventId}/companies/${data.companyId}`);
       router.refresh();
     } catch (e) {
       setError(e instanceof Error ? e.message : "登録に失敗しました。");
@@ -106,169 +76,139 @@ export default function ProfileRegisterForm({
   }
 
   const inputClass =
-    "mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-3 outline-none focus:border-slate-600";
+    "mt-2 w-full rounded-2xl border border-[#d9eaf2] bg-[#f9fcfe] px-4 py-3.5 text-sm font-medium text-[#173042] outline-none transition placeholder:text-[#9babb4] focus:border-[#62bde5] focus:bg-white focus:ring-4 focus:ring-[#def4fe]";
+  const labelClass = "text-sm font-extrabold text-[#3d5663]";
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="mt-6 space-y-8 rounded-3xl bg-white p-5 shadow-sm sm:p-7"
-    >
-      <section>
-        <h2 className="text-lg font-semibold">会社情報</h2>
-        <div className="mt-4 grid gap-4">
-          <label className="text-sm font-medium">
-            企業名 <span className="text-red-600">*</span>
-            <input
-              required
-              name="companyName"
-              className={inputClass}
-              placeholder="株式会社○○"
-            />
-          </label>
+    <form onSubmit={handleSubmit} className="mt-5 space-y-5">
+      <section className="rounded-[28px] border border-[#e1eef4] bg-white p-5 shadow-[0_10px_28px_rgba(50,99,121,0.07)] sm:p-7">
+        <div className="flex items-center gap-3">
+          <span className="grid h-11 w-11 place-items-center rounded-[18px] bg-[#e5f7ff] text-[#249ed1]">
+            <Icon name="building" className="h-6 w-6" />
+          </span>
+          <div>
+            <p className="text-[11px] font-extrabold tracking-[0.14em] text-[#55afd4]">STEP 1</p>
+            <h2 className="font-extrabold">会社情報</h2>
+          </div>
+        </div>
 
-          <label className="text-sm font-medium">
-            業界 <span className="text-red-600">*</span>
-            <select
-              required
-              name="industryId"
-              className={inputClass}
-              defaultValue=""
-            >
-              <option value="" disabled>
-                選択してください
-              </option>
+        <div className="mt-6 grid gap-5">
+          <label className={labelClass}>
+            企業名 <span className="text-[#e56c6c]">*</span>
+            <input required name="companyName" className={inputClass} placeholder="株式会社○○" />
+          </label>
+          <label className={labelClass}>
+            業界 <span className="text-[#e56c6c]">*</span>
+            <select required name="industryId" className={inputClass} defaultValue="">
+              <option value="" disabled>選択してください</option>
               {industries.map((industry) => (
-                <option key={industry.id} value={industry.id}>
-                  {industry.name}
-                </option>
+                <option key={industry.id} value={industry.id}>{industry.name}</option>
               ))}
             </select>
           </label>
-
-          <label className="text-sm font-medium">
-            事業内容 <span className="text-red-600">*</span>
-            <textarea
-              required
-              name="businessDescription"
-              className={inputClass}
-              rows={4}
-              placeholder="主な事業内容を入力してください"
-            />
+          <label className={labelClass}>
+            事業内容 <span className="text-[#e56c6c]">*</span>
+            <textarea required name="businessDescription" className={inputClass} rows={4} placeholder="どんな事業をしている会社か、簡潔に入力してください" />
           </label>
-
-          <label className="text-sm font-medium">
+          <label className={labelClass}>
             企業プロフィール
-            <textarea
-              name="companyProfile"
-              className={inputClass}
-              rows={4}
-              placeholder="会社の特徴や交流会で話したい内容など"
-            />
+            <textarea name="companyProfile" className={inputClass} rows={4} placeholder="会社の特徴、強み、交流会で話したいことなど" />
           </label>
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <label className="text-sm font-medium">
+          <div className="grid gap-5 sm:grid-cols-2">
+            <label className={labelClass}>
               電話番号
-              <input name="companyPhone" className={inputClass} />
+              <input name="companyPhone" className={inputClass} placeholder="000-0000-0000" />
             </label>
-            <label className="text-sm font-medium">
+            <label className={labelClass}>
               郵便番号
-              <input name="postalCode" className={inputClass} />
+              <input name="postalCode" className={inputClass} placeholder="000-0000" />
             </label>
           </div>
-
-          <label className="text-sm font-medium">
+          <label className={labelClass}>
             住所
-            <input name="address" className={inputClass} />
+            <input name="address" className={inputClass} placeholder="愛知県犬山市..." />
           </label>
-
-          <label className="text-sm font-medium">
+          <label className={labelClass}>
             Webサイト
-            <input
-              name="websiteUrl"
-              type="url"
-              className={inputClass}
-              placeholder="https://..."
-            />
+            <input name="websiteUrl" type="url" className={inputClass} placeholder="https://..." />
           </label>
         </div>
       </section>
 
-      <section>
-        <h2 className="text-lg font-semibold">担当者情報</h2>
-        <div className="mt-4 grid gap-4">
-          <label className="text-sm font-medium">
-            氏名 <span className="text-red-600">*</span>
-            <input required name="personName" className={inputClass} />
-          </label>
+      <section className="rounded-[28px] border border-[#eee7c8] bg-[#fffdf3] p-5 shadow-[0_10px_28px_rgba(90,82,42,0.055)] sm:p-7">
+        <div className="flex items-center gap-3">
+          <span className="grid h-11 w-11 place-items-center rounded-[18px] bg-[#fff1a8] text-[#8d711a]">
+            <Icon name="user-plus" className="h-6 w-6" />
+          </span>
+          <div>
+            <p className="text-[11px] font-extrabold tracking-[0.14em] text-[#a68a31]">STEP 2</p>
+            <h2 className="font-extrabold">担当者情報</h2>
+          </div>
+        </div>
 
-          <label className="text-sm font-medium">
-            顔写真 <span className="text-red-600">*</span>
-            <input
-              required
-              type="file"
-              accept="image/jpeg,image/png,image/webp"
-              className="mt-2 block w-full text-sm"
-              onChange={(event) => setPhoto(event.target.files?.[0] ?? null)}
-            />
-            <span className="mt-1 block text-xs font-normal text-slate-500">
-              JPEG / PNG / WebP、最大5MB
+        <div className="mt-6 grid gap-5">
+          <label className={labelClass}>
+            氏名 <span className="text-[#e56c6c]">*</span>
+            <input required name="personName" className={inputClass} placeholder="山田 太郎" />
+          </label>
+          <label className={labelClass}>
+            顔写真 <span className="text-[#e56c6c]">*</span>
+            <span className="mt-2 block rounded-[22px] border-2 border-dashed border-[#c9e4ef] bg-white p-5 text-center">
+              <span className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-[#e9f8ff] text-[#279fd1]">
+                <Icon name="user-plus" className="h-6 w-6" />
+              </span>
+              <span className="mt-3 block text-sm font-extrabold text-[#3f5e6d]">
+                {photo ? photo.name : "顔がわかる写真を選択"}
+              </span>
+              <span className="mt-1 block text-xs font-medium text-[#8397a1]">JPEG / PNG / WebP、最大5MB</span>
+              <input
+                required
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                className="mt-4 block w-full text-xs text-[#718792] file:mr-3 file:rounded-full file:border-0 file:bg-[#4db7e5] file:px-4 file:py-2 file:font-extrabold file:text-white"
+                onChange={(event) => setPhoto(event.target.files?.[0] ?? null)}
+              />
             </span>
           </label>
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <label className="text-sm font-medium">
+          <div className="grid gap-5 sm:grid-cols-2">
+            <label className={labelClass}>
               部署
-              <input name="department" className={inputClass} />
+              <input name="department" className={inputClass} placeholder="営業部" />
             </label>
-            <label className="text-sm font-medium">
+            <label className={labelClass}>
               役職
-              <input name="position" className={inputClass} />
+              <input name="position" className={inputClass} placeholder="部長" />
             </label>
           </div>
-
-          <label className="text-sm font-medium">
+          <label className={labelClass}>
             電話番号
-            <input name="personPhone" className={inputClass} />
+            <input name="personPhone" className={inputClass} placeholder="000-0000-0000" />
           </label>
-
-          <label className="text-sm font-medium">
+          <label className={labelClass}>
             担当業務
-            <input
-              name="responsibility"
-              className={inputClass}
-              placeholder="営業、採用、開発など"
-            />
+            <input name="responsibility" className={inputClass} placeholder="営業、採用、開発など" />
           </label>
-
-          <label className="text-sm font-medium">
+          <label className={labelClass}>
             自己紹介
-            <textarea
-              name="personProfile"
-              className={inputClass}
-              rows={4}
-            />
+            <textarea name="personProfile" className={inputClass} rows={4} placeholder="話したいテーマや、担当している仕事について" />
           </label>
         </div>
       </section>
 
-      {error && (
-        <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">
-          {error}
-        </p>
-      )}
+      {error ? (
+        <p className="rounded-[20px] border border-[#ffd7d7] bg-[#fff4f4] px-4 py-3.5 text-sm font-bold text-[#b94e4e]">{error}</p>
+      ) : null}
 
       <button
         type="submit"
         disabled={status === "uploading" || status === "saving"}
-        className="w-full rounded-2xl bg-slate-900 px-5 py-4 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
+        className="w-full rounded-[22px] bg-[#4db7e5] px-5 py-4 text-base font-extrabold text-white shadow-[0_12px_24px_rgba(55,166,214,0.28)] transition hover:bg-[#36a9da] disabled:cursor-not-allowed disabled:opacity-55"
       >
-        {status === "uploading"
-          ? "顔写真をアップロード中..."
-          : status === "saving"
-            ? "プロフィールを登録中..."
-            : "登録する"}
+        {status === "uploading" ? "顔写真をアップロード中..." : status === "saving" ? "プロフィールを登録中..." : "この内容で登録する"}
       </button>
+      <p className="px-3 text-center text-xs leading-5 text-[#82959f]">
+        登録したプロフィールは、この交流会URLを知っている参加者から閲覧できます。
+      </p>
     </form>
   );
 }

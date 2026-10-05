@@ -1,9 +1,14 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Crossover",
-  description: "クロスオーバー企業交流会 参加企業プロフィール",
+  description: "企業交流会で、話したい企業と人を見つけるプロフィールアプリ",
+};
+
+export const viewport: Viewport = {
+  themeColor: "#4db7e5",
+  colorScheme: "light",
 };
 
 export default function RootLayout({
