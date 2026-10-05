@@ -1,0 +1,111 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Company {
+  id                  String             @id @default(cuid())
+  name                String
+  phone               String?
+  postalCode          String?
+  address             String?
+  websiteUrl          String?
+  businessDescription String
+  profile             String?
+  isHidden            Boolean            @default(false)
+  industryId          String
+  industry            Industry           @relation(fields: [industryId], references: [id])
+  people              Person[]
+  eventCompanies      EventCompany[]
+  accessKeys          CompanyAccessKey[]
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+
+  @@index([name])
+  @@index([industryId])
+}
+
+model Person {
+  id             String        @id @default(cuid())
+  companyId      String
+  company        Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  name           String
+  photoUrl       String
+  department     String?
+  position       String?
+  phone          String?
+  responsibility String?
+  profile        String?
+  isHidden       Boolean       @default(false)
+  eventPeople    EventPerson[]
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@index([companyId])
+  @@index([name])
+}
+
+model Industry {
+  id        String    @id @default(cuid())
+  name      String    @unique
+  isActive  Boolean   @default(true)
+  companies Company[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Event {
+  id             String         @id @default(cuid())
+  name           String
+  eventDate      DateTime
+  venue          String?
+  description    String?
+  slug           String         @unique
+  isActive       Boolean        @default(true)
+  eventCompanies EventCompany[]
+  eventPeople    EventPerson[]
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  @@index([eventDate])
+}
+
+model EventCompany {
+  id        String   @id @default(cuid())
+  eventId   String
+  companyId String
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  joinedAt  DateTime @default(now())
+
+  @@unique([eventId, companyId])
+  @@index([companyId])
+}
+
+model EventPerson {
+  id       String   @id @default(cuid())
+  eventId  String
+  personId String
+  event    Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  person   Person   @relation(fields: [personId], references: [id], onDelete: Cascade)
+  joinedAt DateTime @default(now())
+
+  @@unique([eventId, personId])
+  @@index([personId])
+}
+
+model CompanyAccessKey {
+  id        String    @id @default(cuid())
+  companyId String
+  company   Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  keyHash   String
+  createdAt DateTime  @default(now())
+  revokedAt DateTime?
+
+  @@index([companyId])
+  @@index([keyHash])
+}
