@@ -4,6 +4,7 @@ out
 .env
 .env.local
 .env.*.local
+.neon
 .vercel
 app/generated/prisma
 *.log
