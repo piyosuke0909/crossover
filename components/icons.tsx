@@ -14,7 +14,9 @@ type IconName =
   | "briefcase"
   | "lock"
   | "logout"
-  | "sparkles";
+  | "sparkles"
+  | "qr"
+  | "handshake";
 
 type IconProps = SVGProps<SVGSVGElement> & { name: IconName };
 
@@ -109,6 +111,22 @@ export function Icon({ name, className = "h-5 w-5", ...props }: IconProps) {
           <path {...common} d="m12 3 1.1 3.2L16 7.4l-2.9 1.2L12 12l-1.1-3.4L8 7.4l2.9-1.2L12 3Z" />
           <path {...common} d="m18.5 12.5.7 2 1.8.7-1.8.8-.7 2-.7-2-1.8-.8 1.8-.7.7-2Z" />
           <path {...common} d="m5.5 13 .7 2 1.8.7-1.8.8-.7 2-.7-2-1.8-.8 1.8-.7.7-2Z" />
+        </>
+      )}
+      {name === "qr" && (
+        <>
+          <rect {...common} x="3.5" y="3.5" width="6" height="6" rx="1" />
+          <rect {...common} x="14.5" y="3.5" width="6" height="6" rx="1" />
+          <rect {...common} x="3.5" y="14.5" width="6" height="6" rx="1" />
+          <path {...common} d="M14.5 14.5h2v2h-2zM18.5 14.5h2v2h-2zM14.5 18.5h2v2h-2zM18.5 18.5h2" />
+        </>
+      )}
+      {name === "handshake" && (
+        <>
+          <path {...common} d="m8.5 9.5 2.4-2.3a2.3 2.3 0 0 1 3.2 0l1.4 1.4" />
+          <path {...common} d="m4 9 3.3-3.3 3 2.3-4.6 4.6a1.8 1.8 0 0 0 2.5 2.6l3.2-3.2" />
+          <path {...common} d="m16.7 6 3.3 3.3-6.5 6.5a2 2 0 0 1-2.8 0l-.5-.5" />
+          <path {...common} d="m12.8 13.5 1.4 1.4M14.8 11.5l1.4 1.4" />
         </>
       )}
     </svg>

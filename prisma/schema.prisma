@@ -17,8 +17,7 @@ model Company {
   businessDescription String
   profile             String?
   isHidden            Boolean            @default(false)
-  industryId          String
-  industry            Industry           @relation(fields: [industryId], references: [id])
+  industries          CompanyIndustry[]
   people              Person[]
   eventCompanies      EventCompany[]
   accessKeys          CompanyAccessKey[]
@@ -26,50 +25,66 @@ model Company {
   updatedAt           DateTime           @updatedAt
 
   @@index([name])
-  @@index([industryId])
 }
 
 model Person {
-  id             String        @id @default(cuid())
-  companyId      String
-  company        Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  name           String
-  photoUrl       String
-  department     String?
-  position       String?
-  phone          String?
-  responsibility String?
-  profile        String?
-  isHidden       Boolean       @default(false)
-  eventPeople    EventPerson[]
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
+  id              String               @id @default(cuid())
+  companyId       String
+  company         Company              @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  name            String
+  photoUrl        String
+  department      String?
+  position        String?
+  phone           String?
+  responsibility  String?
+  profile         String?
+  isHidden        Boolean              @default(false)
+  eventPeople     EventPerson[]
+  sessions        ParticipantSession[]
+  encountersOwned Encounter[]          @relation("EncounterOwner")
+  encountersMet   Encounter[]          @relation("EncounterMet")
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
 
   @@index([companyId])
   @@index([name])
 }
 
 model Industry {
-  id        String    @id @default(cuid())
-  name      String    @unique
-  isActive  Boolean   @default(true)
-  companies Company[]
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  id        String            @id @default(cuid())
+  name      String            @unique
+  isActive  Boolean           @default(true)
+  companies CompanyIndustry[]
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+}
+
+model CompanyIndustry {
+  id         String   @id @default(cuid())
+  companyId  String
+  industryId String
+  company    Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  industry   Industry @relation(fields: [industryId], references: [id], onDelete: Restrict)
+  createdAt  DateTime @default(now())
+
+  @@unique([companyId, industryId])
+  @@index([industryId])
 }
 
 model Event {
-  id             String         @id @default(cuid())
+  id             String               @id @default(cuid())
   name           String
   eventDate      DateTime
   venue          String?
   description    String?
-  slug           String         @unique
-  isActive       Boolean        @default(true)
+  slug           String               @unique
+  isActive       Boolean              @default(true)
   eventCompanies EventCompany[]
   eventPeople    EventPerson[]
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
+  sessions       ParticipantSession[]
+  encounters     Encounter[]
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
 
   @@index([eventDate])
 }
@@ -96,6 +111,35 @@ model EventPerson {
 
   @@unique([eventId, personId])
   @@index([personId])
+}
+
+model ParticipantSession {
+  id        String   @id @default(cuid())
+  eventId   String
+  personId  String
+  tokenHash String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  person    Person   @relation(fields: [personId], references: [id], onDelete: Cascade)
+
+  @@index([eventId, personId])
+  @@index([expiresAt])
+}
+
+model Encounter {
+  id            String   @id @default(cuid())
+  eventId       String
+  ownerPersonId String
+  metPersonId   String
+  createdAt     DateTime @default(now())
+  event         Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  ownerPerson   Person   @relation("EncounterOwner", fields: [ownerPersonId], references: [id], onDelete: Cascade)
+  metPerson     Person   @relation("EncounterMet", fields: [metPersonId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, ownerPersonId, metPersonId])
+  @@index([ownerPersonId])
+  @@index([metPersonId])
 }
 
 model CompanyAccessKey {

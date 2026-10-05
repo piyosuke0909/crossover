@@ -1,3 +1,9 @@
+import {
+  hashParticipantToken,
+  newParticipantToken,
+  participantCookieName,
+  participantSessionExpiry,
+} from "@/lib/participant-session";
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 
@@ -8,7 +14,7 @@ type RegistrationBody = {
     postalCode?: string;
     address?: string;
     websiteUrl?: string;
-    industryId?: string;
+    industryIds?: string[];
     businessDescription?: string;
     profile?: string;
   };
@@ -37,10 +43,17 @@ export async function POST(
 
   const company = body.company;
   const person = body.person;
+  const industryIds = Array.from(
+    new Set(
+      (company?.industryIds ?? [])
+        .map((id) => id.trim())
+        .filter(Boolean),
+    ),
+  );
 
   if (
     !company?.name?.trim() ||
-    !company.industryId?.trim() ||
+    industryIds.length === 0 ||
     !company.businessDescription?.trim() ||
     !person?.name?.trim() ||
     !person.photoUrl?.trim()
@@ -51,14 +64,17 @@ export async function POST(
     );
   }
 
-  const [event, industry] = await Promise.all([
+  const [event, industries] = await Promise.all([
     prisma.event.findUnique({
       where: { id: eventId },
       select: { id: true, isActive: true },
     }),
-    prisma.industry.findUnique({
-      where: { id: company.industryId },
-      select: { id: true, isActive: true },
+    prisma.industry.findMany({
+      where: {
+        id: { in: industryIds },
+        isActive: true,
+      },
+      select: { id: true },
     }),
   ]);
 
@@ -69,12 +85,16 @@ export async function POST(
     );
   }
 
-  if (!industry?.isActive) {
+  if (industries.length !== industryIds.length) {
     return NextResponse.json(
-      { error: "選択された業界が利用できません。" },
+      { error: "選択された業界の一部が利用できません。" },
       { status: 400 },
     );
   }
+
+  const rawToken = newParticipantToken();
+  const tokenHash = hashParticipantToken(rawToken);
+  const expiresAt = participantSessionExpiry();
 
   const result = await prisma.$transaction(async (tx) => {
     const createdCompany = await tx.company.create({
@@ -84,9 +104,13 @@ export async function POST(
         postalCode: optional(company.postalCode),
         address: optional(company.address),
         websiteUrl: optional(company.websiteUrl),
-        industryId: company.industryId!.trim(),
         businessDescription: company.businessDescription!.trim(),
         profile: optional(company.profile),
+        industries: {
+          create: industryIds.map((industryId) => ({
+            industryId,
+          })),
+        },
         eventCompanies: {
           create: {
             eventId,
@@ -113,11 +137,29 @@ export async function POST(
       },
     });
 
+    await tx.participantSession.create({
+      data: {
+        eventId,
+        personId: createdPerson.id,
+        tokenHash,
+        expiresAt,
+      },
+    });
+
     return {
       companyId: createdCompany.id,
       personId: createdPerson.id,
     };
   });
 
-  return NextResponse.json(result, { status: 201 });
+  const response = NextResponse.json(result, { status: 201 });
+  response.cookies.set(participantCookieName(eventId), rawToken, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    expires: expiresAt,
+  });
+
+  return response;
 }
