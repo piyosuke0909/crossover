@@ -32,7 +32,7 @@ export default function BottomNav({ eventId }: { eventId: string }) {
           const active =
             item.href === `/events/${eventId}`
               ? pathname === item.href
-              : pathname.startsWith(item.href);
+              : pathname === item.href || pathname.startsWith(`${item.href}/`);
 
           return (
             <Link
