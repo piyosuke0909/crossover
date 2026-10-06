@@ -2,7 +2,13 @@ import { NextResponse } from "next/server";
 
 const ALLOWED_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 const MAX_BYTES = 5 * 1024 * 1024;
-const GEMINI_MODEL = "gemini-3.6-flash";
+const GEMINI_MODELS = [
+  "gemini-3.8-flash",
+  "gemini-3.7-flash",
+  "gemini-3.6-flash",
+] as const;
+const RETRYABLE_STATUSES = new Set([429, 500, 502, 503, 504]);
+const MAX_ATTEMPTS_PER_MODEL = 2;
 
 type GeminiErrorPayload = {
   error?: {
@@ -12,12 +18,28 @@ type GeminiErrorPayload = {
   };
 };
 
-function publicGeminiError(status: number, message: string) {
-  const normalized = message.toLowerCase();
+type GeminiSuccessPayload = {
+  candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
+};
+
+type GeminiFailure = {
+  model: string;
+  httpStatus: number;
+  httpStatusText: string;
+  googleStatus?: string;
+  googleMessage: string;
+};
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function publicGeminiError(failure: GeminiFailure) {
+  const normalized = failure.googleMessage.toLowerCase();
 
   if (
-    status === 401 ||
-    status === 403 ||
+    failure.httpStatus === 401 ||
+    failure.httpStatus === 403 ||
     normalized.includes("api key") ||
     normalized.includes("permission_denied") ||
     normalized.includes("permission denied")
@@ -26,22 +48,94 @@ function publicGeminiError(status: number, message: string) {
   }
 
   if (
-    status === 429 ||
+    failure.httpStatus === 429 ||
     normalized.includes("resource_exhausted") ||
     normalized.includes("quota")
   ) {
     return "Gemini APIの利用上限に達しています。Google AI Studioの利用枠・課金設定を確認してください。";
   }
 
-  if (status === 404 || normalized.includes("not found")) {
-    return `Geminiモデル（${GEMINI_MODEL}）を利用できません。API設定またはモデル利用可否を確認してください。`;
+  if (
+    failure.httpStatus === 503 ||
+    failure.googleStatus === "UNAVAILABLE" ||
+    normalized.includes("high demand") ||
+    normalized.includes("unavailable")
+  ) {
+    return "Geminiが混雑しています。自動再試行と別モデルへの切り替えも行いましたが処理できませんでした。少し時間を置いてもう一度お試しください。";
   }
 
-  if (status === 400) {
+  if (failure.httpStatus === 404 || normalized.includes("not found")) {
+    return `Geminiモデル（${failure.model}）を利用できません。API設定またはモデル利用可否を確認してください。`;
+  }
+
+  if (failure.httpStatus === 400) {
     return "Gemini APIへのリクエストが不正です。名刺画像の形式やAPI設定を確認してください。";
   }
 
-  return `Gemini APIでエラーが発生しました（HTTP ${status}）。サーバーログのGeminiエラー詳細を確認してください。`;
+  return `Gemini APIでエラーが発生しました（HTTP ${failure.httpStatus}）。サーバーログのGeminiエラー詳細を確認してください。`;
+}
+
+async function callGemini({
+  apiKey,
+  model,
+  imageType,
+  imageData,
+  prompt,
+}: {
+  apiKey: string;
+  model: string;
+  imageType: string;
+  imageData: string;
+  prompt: string;
+}) {
+  return fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-goog-api-key": apiKey,
+      },
+      body: JSON.stringify({
+        contents: [
+          {
+            parts: [
+              { inline_data: { mime_type: imageType, data: imageData } },
+              { text: prompt },
+            ],
+          },
+        ],
+        generationConfig: {
+          responseMimeType: "application/json",
+          temperature: 0,
+        },
+      }),
+      signal: AbortSignal.timeout(30_000),
+    },
+  );
+}
+
+async function parseGeminiFailure(
+  response: Response,
+  model: string,
+): Promise<GeminiFailure> {
+  const rawError = await response.text();
+
+  let geminiError: GeminiErrorPayload | null = null;
+  try {
+    geminiError = JSON.parse(rawError) as GeminiErrorPayload;
+  } catch {
+    // GoogleがJSON以外を返した場合も、秘密値を含めずHTTP情報だけ記録する。
+  }
+
+  return {
+    model,
+    httpStatus: response.status,
+    httpStatusText: response.statusText,
+    googleStatus: geminiError?.error?.status,
+    googleMessage:
+      geminiError?.error?.message?.slice(0, 1000) || rawError.slice(0, 1000),
+  };
 }
 
 export async function POST(request: Request) {
@@ -70,46 +164,91 @@ export async function POST(request: Request) {
     );
   }
 
-  const data = Buffer.from(await image.arrayBuffer()).toString("base64");
+  const imageData = Buffer.from(await image.arrayBuffer()).toString("base64");
   const prompt = `この名刺画像からプロフィール入力に使える情報を読み取ってください。
 推測で埋めず、画像から確認できない項目は空文字にしてください。
 JSONのみを返してください。
 キー:
 companyName, personName, department, position, companyPhone, personPhone, email, postalCode, address, websiteUrl, industryHint`;
 
-  let response: Response;
+  let result: GeminiSuccessPayload | null = null;
+  let usedModel: string | null = null;
+  let lastFailure: GeminiFailure | null = null;
 
-  try {
-    response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-goog-api-key": apiKey,
-        },
-        body: JSON.stringify({
-          contents: [
-            {
-              parts: [
-                { inline_data: { mime_type: image.type, data } },
-                { text: prompt },
-              ],
-            },
-          ],
-          generationConfig: {
-            responseMimeType: "application/json",
-            temperature: 0,
+  for (const model of GEMINI_MODELS) {
+    for (let attempt = 1; attempt <= MAX_ATTEMPTS_PER_MODEL; attempt += 1) {
+      let response: Response;
+
+      try {
+        response = await callGemini({
+          apiKey,
+          model,
+          imageType: image.type,
+          imageData,
+          prompt,
+        });
+      } catch (error) {
+        console.error("Gemini business card request failed before response", {
+          model,
+          attempt,
+          error: error instanceof Error ? error.message : String(error),
+        });
+
+        if (attempt < MAX_ATTEMPTS_PER_MODEL) {
+          await sleep(600 * 2 ** (attempt - 1));
+          continue;
+        }
+
+        break;
+      }
+
+      if (response.ok) {
+        result = (await response.json()) as GeminiSuccessPayload;
+        usedModel = model;
+        break;
+      }
+
+      const failure = await parseGeminiFailure(response, model);
+      lastFailure = failure;
+
+      console.error("Gemini business card scan failed", {
+        ...failure,
+        attempt,
+      });
+
+      if (!RETRYABLE_STATUSES.has(response.status)) {
+        return NextResponse.json(
+          {
+            error: publicGeminiError(failure),
+            code: failure.googleStatus || `HTTP_${failure.httpStatus}`,
           },
-        }),
-        signal: AbortSignal.timeout(30_000),
-      },
-    );
-  } catch (error) {
-    console.error("Gemini business card request failed before response", {
-      model: GEMINI_MODEL,
-      error: error instanceof Error ? error.message : String(error),
+          { status: 502 },
+        );
+      }
+
+      if (attempt < MAX_ATTEMPTS_PER_MODEL) {
+        await sleep(600 * 2 ** (attempt - 1));
+      }
+    }
+
+    if (result) break;
+
+    console.warn("Gemini business card scan falling back to next model", {
+      failedModel: model,
     });
+  }
+
+  if (!result || !usedModel) {
+    if (lastFailure) {
+      return NextResponse.json(
+        {
+          error: publicGeminiError(lastFailure),
+          code:
+            lastFailure.googleStatus || `HTTP_${lastFailure.httpStatus}`,
+        },
+        { status: 502 },
+      );
+    }
 
     return NextResponse.json(
       {
@@ -120,40 +259,9 @@ companyName, personName, department, position, companyPhone, personPhone, email,
     );
   }
 
-  if (!response.ok) {
-    const rawError = await response.text();
-
-    let geminiError: GeminiErrorPayload | null = null;
-    try {
-      geminiError = JSON.parse(rawError) as GeminiErrorPayload;
-    } catch {
-      // GoogleがJSON以外を返した場合も、秘密値を含めずHTTP情報だけ記録する。
-    }
-
-    const googleMessage =
-      geminiError?.error?.message?.slice(0, 1000) || rawError.slice(0, 1000);
-    const googleStatus = geminiError?.error?.status;
-
-    console.error("Gemini business card scan failed", {
-      model: GEMINI_MODEL,
-      httpStatus: response.status,
-      httpStatusText: response.statusText,
-      googleStatus,
-      googleMessage,
-    });
-
-    return NextResponse.json(
-      {
-        error: publicGeminiError(response.status, googleMessage),
-        code: googleStatus || `HTTP_${response.status}`,
-      },
-      { status: 502 },
-    );
-  }
-
-  const result = (await response.json()) as {
-    candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
-  };
+  console.info("Gemini business card scan succeeded", {
+    model: usedModel,
+  });
 
   const raw = result.candidates?.[0]?.content?.parts
     ?.map((part) => part.text ?? "")
@@ -162,7 +270,7 @@ companyName, personName, department, position, companyPhone, personPhone, email,
 
   if (!raw) {
     console.error("Gemini business card scan returned no text", {
-      model: GEMINI_MODEL,
+      model: usedModel,
     });
 
     return NextResponse.json(
@@ -193,7 +301,7 @@ companyName, personName, department, position, companyPhone, personPhone, email,
     });
   } catch (error) {
     console.error("Gemini business card JSON parse failed", {
-      model: GEMINI_MODEL,
+      model: usedModel,
       error: error instanceof Error ? error.message : String(error),
       responsePreview: raw.slice(0, 500),
     });
