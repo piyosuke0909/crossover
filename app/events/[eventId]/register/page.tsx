@@ -41,6 +41,7 @@ export default async function RegisterPage({
 
         <ProfileRegisterForm
           eventId={event.id}
+          businessCardScanEnabled={Boolean(process.env.GEMINI_API_KEY?.trim())}
           industries={industries.map((industry) => ({
             id: industry.id,
             name: industry.name,
