@@ -21,13 +21,13 @@ export default function BottomNav({ eventId }: { eventId: string }) {
     {
       href: `/events/${eventId}/me`,
       label: "自分",
-      icon: "qr" as const,
+      icon: "person" as const,
     },
   ];
 
   return (
     <nav className="fixed inset-x-0 bottom-3 z-40 px-3 sm:bottom-5">
-      <div className="mx-auto flex max-w-md items-center justify-around rounded-[28px] border border-white/80 bg-white/95 px-2 py-2 shadow-[0_14px_40px_rgba(43,99,126,0.18)] backdrop-blur">
+      <div className="mx-auto grid max-w-md grid-cols-4 rounded-[28px] border border-white/80 bg-white/95 p-2 shadow-[0_14px_40px_rgba(43,99,126,0.18)] backdrop-blur">
         {items.map((item) => {
           const active =
             item.href === `/events/${eventId}`
@@ -38,14 +38,16 @@ export default function BottomNav({ eventId }: { eventId: string }) {
             <Link
               key={item.href}
               href={item.href}
-              className={`flex min-w-16 flex-col items-center gap-1 rounded-2xl px-3 py-2 text-[11px] font-bold transition ${
+              className={`flex min-w-0 flex-col items-center justify-center gap-1 rounded-2xl px-1 py-2.5 text-[11px] font-bold transition ${
                 active
                   ? "bg-[#e6f7ff] text-[#239ed1]"
                   : "text-[#7b8e99] hover:bg-[#f5fbfe]"
               }`}
             >
-              <Icon name={item.icon} className="h-5 w-5" />
-              {item.label}
+              <span className="grid h-7 w-7 place-items-center">
+                <Icon name={item.icon} className="h-6 w-6" />
+              </span>
+              <span className="max-w-full truncate">{item.label}</span>
             </Link>
           );
         })}
