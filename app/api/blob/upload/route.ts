@@ -20,10 +20,14 @@ export async function POST(request: Request): Promise<NextResponse> {
 
         const event = await prisma.event.findUnique({
           where: { id: payload.eventId },
-          select: { id: true, isActive: true },
+          select: {
+            id: true,
+            isActive: true,
+            deletedAt: true,
+          },
         });
 
-        if (!event?.isActive) {
+        if (!event?.isActive || event.deletedAt) {
           throw new Error("この交流会には登録できません。");
         }
 

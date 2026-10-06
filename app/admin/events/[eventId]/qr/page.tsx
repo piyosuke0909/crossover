@@ -14,8 +14,8 @@ export default async function AdminEventQrPage({
 }) {
   const { eventId } = await params;
 
-  const event = await prisma.event.findUnique({
-    where: { id: eventId },
+  const event = await prisma.event.findFirst({
+    where: { id: eventId, deletedAt: null },
     include: {
       _count: {
         select: {
@@ -57,9 +57,20 @@ export default async function AdminEventQrPage({
                 <Icon name="qr" className="h-7 w-7" />
               </span>
               <div>
-                <p className="text-xs font-extrabold tracking-[0.16em] text-[#4aaed9]">
-                  EVENT QR
-                </p>
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="text-xs font-extrabold tracking-[0.16em] text-[#4aaed9]">
+                    EVENT QR
+                  </p>
+                  <span
+                    className={`rounded-full px-2.5 py-1 text-[10px] font-extrabold ${
+                      event.isActive
+                        ? "bg-[#e8f8ee] text-[#47865d]"
+                        : "bg-white/70 text-[#7c8a91]"
+                    }`}
+                  >
+                    {event.isActive ? "公開中" : "非公開"}
+                  </span>
+                </div>
                 <h1 className="mt-1 text-2xl font-extrabold">
                   {event.name}
                 </h1>
@@ -78,6 +89,12 @@ export default async function AdminEventQrPage({
                 className="h-auto w-full"
               />
             </div>
+
+            {!event.isActive ? (
+              <p className="mt-5 rounded-2xl bg-[#fff5c9] px-4 py-3 text-center text-xs font-extrabold text-[#76641f]">
+                現在は非公開のため、このQRを読み取っても参加者画面は表示されません。
+              </p>
+            ) : null}
 
             <p className="mt-5 break-all rounded-2xl bg-[#f7fbfd] px-4 py-3 text-center text-xs font-bold text-[#607783]">
               {eventUrl}
@@ -101,10 +118,6 @@ export default async function AdminEventQrPage({
                 </p>
               </div>
             </div>
-
-            <p className="mt-5 text-center text-xs leading-5 text-[#80939d]">
-              このQRを会場入口や受付に掲示すると、参加者が交流会ページを開けます。
-            </p>
           </div>
         </section>
       </div>

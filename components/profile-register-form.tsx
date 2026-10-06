@@ -8,6 +8,14 @@ import { Icon } from "@/components/icons";
 type Industry = { id: string; name: string };
 type Props = { eventId: string; industries: Industry[] };
 
+const MAX_TEXT = 200;
+const MAX_PHOTO_BYTES = 5 * 1024 * 1024;
+const ALLOWED_PHOTO_TYPES = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+]);
+
 export default function ProfileRegisterForm({ eventId, industries }: Props) {
   const router = useRouter();
   const [photo, setPhoto] = useState<File | null>(null);
@@ -22,6 +30,16 @@ export default function ProfileRegisterForm({ eventId, industries }: Props) {
 
     if (!photo) {
       setError("担当者の顔写真を選択してください。");
+      return;
+    }
+
+    if (!ALLOWED_PHOTO_TYPES.has(photo.type)) {
+      setError("顔写真はJPEG / PNG / WebPを選択してください。");
+      return;
+    }
+
+    if (photo.size > MAX_PHOTO_BYTES) {
+      setError("顔写真は5MB以内にしてください。");
       return;
     }
 
@@ -57,7 +75,9 @@ export default function ProfileRegisterForm({ eventId, industries }: Props) {
             address: String(form.get("address") ?? ""),
             websiteUrl: String(form.get("websiteUrl") ?? ""),
             industryIds,
-            businessDescription: String(form.get("businessDescription") ?? ""),
+            businessDescription: String(
+              form.get("businessDescription") ?? "",
+            ),
             profile: String(form.get("companyProfile") ?? ""),
           },
           person: {
@@ -93,6 +113,8 @@ export default function ProfileRegisterForm({ eventId, industries }: Props) {
   const inputClass =
     "mt-2 w-full rounded-2xl border border-[#d9eaf2] bg-[#f9fcfe] px-4 py-3.5 text-sm font-medium text-[#173042] outline-none transition placeholder:text-[#9babb4] focus:border-[#62bde5] focus:bg-white focus:ring-4 focus:ring-[#def4fe]";
   const labelClass = "text-sm font-extrabold text-[#3d5663]";
+  const helpClass =
+    "mt-1 block text-right text-[11px] font-medium text-[#8a9ca5]";
 
   return (
     <form onSubmit={handleSubmit} className="mt-5 space-y-5">
@@ -114,10 +136,12 @@ export default function ProfileRegisterForm({ eventId, industries }: Props) {
             企業名 <span className="text-[#e56c6c]">*</span>
             <input
               required
+              maxLength={MAX_TEXT}
               name="companyName"
               className={inputClass}
               placeholder="株式会社○○"
             />
+            <span className={helpClass}>200文字以内</span>
           </label>
 
           <fieldset>
@@ -148,21 +172,25 @@ export default function ProfileRegisterForm({ eventId, industries }: Props) {
             事業内容 <span className="text-[#e56c6c]">*</span>
             <textarea
               required
+              maxLength={MAX_TEXT}
               name="businessDescription"
               className={inputClass}
               rows={4}
               placeholder="どんな事業をしている会社か、簡潔に入力してください"
             />
+            <span className={helpClass}>200文字以内</span>
           </label>
 
           <label className={labelClass}>
             企業プロフィール
             <textarea
+              maxLength={MAX_TEXT}
               name="companyProfile"
               className={inputClass}
               rows={4}
               placeholder="会社の特徴、強み、交流会で話したいことなど"
             />
+            <span className={helpClass}>200文字以内</span>
           </label>
 
           <div className="grid gap-5 sm:grid-cols-2">
@@ -170,16 +198,25 @@ export default function ProfileRegisterForm({ eventId, industries }: Props) {
               電話番号
               <input
                 name="companyPhone"
+                type="tel"
+                inputMode="tel"
+                maxLength={25}
+                pattern="[0-9+() -]{8,25}"
+                title="8〜25文字の数字・+・()・ハイフン・空白で入力してください"
                 className={inputClass}
-                placeholder="000-0000-0000"
+                placeholder="0568-00-0000"
               />
             </label>
             <label className={labelClass}>
               郵便番号
               <input
                 name="postalCode"
+                inputMode="numeric"
+                maxLength={8}
+                pattern="\d{3}-?\d{4}"
+                title="123-4567の形式で入力してください"
                 className={inputClass}
-                placeholder="000-0000"
+                placeholder="484-0000"
               />
             </label>
           </div>
@@ -188,9 +225,11 @@ export default function ProfileRegisterForm({ eventId, industries }: Props) {
             住所
             <input
               name="address"
+              maxLength={MAX_TEXT}
               className={inputClass}
               placeholder="愛知県犬山市..."
             />
+            <span className={helpClass}>200文字以内</span>
           </label>
 
           <label className={labelClass}>
@@ -198,9 +237,11 @@ export default function ProfileRegisterForm({ eventId, industries }: Props) {
             <input
               name="websiteUrl"
               type="url"
+              maxLength={MAX_TEXT}
               className={inputClass}
               placeholder="https://..."
             />
+            <span className={helpClass}>http:// または https:// / 200文字以内</span>
           </label>
         </div>
       </section>
@@ -223,10 +264,12 @@ export default function ProfileRegisterForm({ eventId, industries }: Props) {
             氏名 <span className="text-[#e56c6c]">*</span>
             <input
               required
+              maxLength={MAX_TEXT}
               name="personName"
               className={inputClass}
               placeholder="山田 太郎"
             />
+            <span className={helpClass}>200文字以内</span>
           </label>
 
           <label className={labelClass}>
@@ -246,9 +289,25 @@ export default function ProfileRegisterForm({ eventId, industries }: Props) {
                 type="file"
                 accept="image/jpeg,image/png,image/webp"
                 className="mt-4 block w-full text-xs text-[#718792] file:mr-3 file:rounded-full file:border-0 file:bg-[#4db7e5] file:px-4 file:py-2 file:font-extrabold file:text-white"
-                onChange={(event) =>
-                  setPhoto(event.target.files?.[0] ?? null)
-                }
+                onChange={(event) => {
+                  const nextPhoto = event.target.files?.[0] ?? null;
+                  setError("");
+                  if (
+                    nextPhoto &&
+                    (!ALLOWED_PHOTO_TYPES.has(nextPhoto.type) ||
+                      nextPhoto.size > MAX_PHOTO_BYTES)
+                  ) {
+                    setPhoto(null);
+                    event.target.value = "";
+                    setError(
+                      nextPhoto.size > MAX_PHOTO_BYTES
+                        ? "顔写真は5MB以内にしてください。"
+                        : "顔写真はJPEG / PNG / WebPを選択してください。",
+                    );
+                    return;
+                  }
+                  setPhoto(nextPhoto);
+                }}
               />
             </span>
           </label>
@@ -258,17 +317,21 @@ export default function ProfileRegisterForm({ eventId, industries }: Props) {
               部署
               <input
                 name="department"
+                maxLength={MAX_TEXT}
                 className={inputClass}
                 placeholder="営業部"
               />
+              <span className={helpClass}>200文字以内</span>
             </label>
             <label className={labelClass}>
               役職
               <input
                 name="position"
+                maxLength={MAX_TEXT}
                 className={inputClass}
                 placeholder="部長"
               />
+              <span className={helpClass}>200文字以内</span>
             </label>
           </div>
 
@@ -276,8 +339,13 @@ export default function ProfileRegisterForm({ eventId, industries }: Props) {
             電話番号
             <input
               name="personPhone"
+              type="tel"
+              inputMode="tel"
+              maxLength={25}
+              pattern="[0-9+() -]{8,25}"
+              title="8〜25文字の数字・+・()・ハイフン・空白で入力してください"
               className={inputClass}
-              placeholder="000-0000-0000"
+              placeholder="090-0000-0000"
             />
           </label>
 
@@ -285,19 +353,23 @@ export default function ProfileRegisterForm({ eventId, industries }: Props) {
             担当業務
             <input
               name="responsibility"
+              maxLength={MAX_TEXT}
               className={inputClass}
               placeholder="営業、採用、開発など"
             />
+            <span className={helpClass}>200文字以内</span>
           </label>
 
           <label className={labelClass}>
             自己紹介
             <textarea
               name="personProfile"
+              maxLength={MAX_TEXT}
               className={inputClass}
               rows={4}
               placeholder="話したいテーマや、担当している仕事について"
             />
+            <span className={helpClass}>200文字以内</span>
           </label>
         </div>
       </section>
@@ -321,7 +393,7 @@ export default function ProfileRegisterForm({ eventId, industries }: Props) {
       </button>
 
       <p className="px-3 text-center text-xs leading-5 text-[#82959f]">
-        登録後、この端末で自分のQRと「話した人」一覧を利用できます。
+        入力内容は最大200文字。登録後、この端末で自分のQRと「話した人」一覧を利用できます。
       </p>
     </form>
   );

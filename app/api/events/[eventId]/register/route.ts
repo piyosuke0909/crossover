@@ -6,68 +6,34 @@ import {
 } from "@/lib/participant-session";
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-
-type RegistrationBody = {
-  company?: {
-    name?: string;
-    phone?: string;
-    postalCode?: string;
-    address?: string;
-    websiteUrl?: string;
-    industryIds?: string[];
-    businessDescription?: string;
-    profile?: string;
-  };
-  person?: {
-    name?: string;
-    photoUrl?: string;
-    department?: string;
-    position?: string;
-    phone?: string;
-    responsibility?: string;
-    profile?: string;
-  };
-};
-
-function optional(value?: string) {
-  const trimmed = value?.trim();
-  return trimmed ? trimmed : null;
-}
+import { validateRegistrationBody } from "@/lib/profile-validation";
 
 export async function POST(
   request: Request,
   context: { params: Promise<{ eventId: string }> },
 ) {
   const { eventId } = await context.params;
-  const body = (await request.json()) as RegistrationBody;
+  const body = await request.json();
+  const validation = validateRegistrationBody(body);
 
-  const company = body.company;
-  const person = body.person;
-  const industryIds = Array.from(
-    new Set(
-      (company?.industryIds ?? [])
-        .map((id) => id.trim())
-        .filter(Boolean),
-    ),
-  );
-
-  if (
-    !company?.name?.trim() ||
-    industryIds.length === 0 ||
-    !company.businessDescription?.trim() ||
-    !person?.name?.trim() ||
-    !person.photoUrl?.trim()
-  ) {
+  if (!validation.ok) {
     return NextResponse.json(
-      { error: "必須項目が入力されていません。" },
+      { error: validation.error },
       { status: 400 },
     );
   }
 
+  const { company, person } = validation.data;
+  const industryIds = company.industryIds;
+
   const [event, industries] = await Promise.all([
     prisma.event.findUnique({
       where: { id: eventId },
-      select: { id: true, isActive: true },
+      select: {
+        id: true,
+        isActive: true,
+        deletedAt: true,
+      },
     }),
     prisma.industry.findMany({
       where: {
@@ -78,7 +44,7 @@ export async function POST(
     }),
   ]);
 
-  if (!event?.isActive) {
+  if (!event?.isActive || event.deletedAt) {
     return NextResponse.json(
       { error: "この交流会には登録できません。" },
       { status: 404 },
@@ -99,13 +65,13 @@ export async function POST(
   const result = await prisma.$transaction(async (tx) => {
     const createdCompany = await tx.company.create({
       data: {
-        name: company.name!.trim(),
-        phone: optional(company.phone),
-        postalCode: optional(company.postalCode),
-        address: optional(company.address),
-        websiteUrl: optional(company.websiteUrl),
-        businessDescription: company.businessDescription!.trim(),
-        profile: optional(company.profile),
+        name: company.name,
+        phone: company.phone,
+        postalCode: company.postalCode,
+        address: company.address,
+        websiteUrl: company.websiteUrl,
+        businessDescription: company.businessDescription,
+        profile: company.profile,
         industries: {
           create: industryIds.map((industryId) => ({
             industryId,
@@ -122,13 +88,13 @@ export async function POST(
     const createdPerson = await tx.person.create({
       data: {
         companyId: createdCompany.id,
-        name: person.name!.trim(),
-        photoUrl: person.photoUrl!.trim(),
-        department: optional(person.department),
-        position: optional(person.position),
-        phone: optional(person.phone),
-        responsibility: optional(person.responsibility),
-        profile: optional(person.profile),
+        name: person.name,
+        photoUrl: person.photoUrl,
+        department: person.department,
+        position: person.position,
+        phone: person.phone,
+        responsibility: person.responsibility,
+        profile: person.profile,
         eventPeople: {
           create: {
             eventId,

@@ -1,17 +1,19 @@
 import Link from "next/link";
 import prisma from "@/lib/prisma";
 import { Icon } from "@/components/icons";
+import AdminEventActions from "@/components/admin-event-actions";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminPage() {
   const [eventCount, companyCount, personCount, events] = await Promise.all([
-    prisma.event.count(),
+    prisma.event.count({ where: { deletedAt: null } }),
     prisma.company.count({ where: { isHidden: false } }),
     prisma.person.count({ where: { isHidden: false } }),
     prisma.event.findMany({
+      where: { deletedAt: null },
       orderBy: { eventDate: "desc" },
-      take: 8,
+      take: 20,
       include: {
         _count: {
           select: { eventCompanies: true, eventPeople: true },
@@ -76,16 +78,24 @@ export default async function AdminPage() {
               運営状況
             </h1>
             <p className="mt-2 text-sm text-[#728792]">
-              イベントと参加プロフィールの状況を確認できます。
+              イベントの作成・編集・公開管理と参加状況を確認できます。
             </p>
           </div>
 
-          <Link
-            href="/"
-            className="inline-flex items-center justify-center rounded-2xl bg-white px-4 py-3 text-sm font-extrabold text-[#378cab] shadow-sm ring-1 ring-[#dfeef4]"
-          >
-            公開サイトを見る
-          </Link>
+          <div className="flex flex-wrap gap-2">
+            <Link
+              href="/"
+              className="inline-flex items-center justify-center rounded-2xl bg-white px-4 py-3 text-sm font-extrabold text-[#378cab] shadow-sm ring-1 ring-[#dfeef4]"
+            >
+              公開サイトを見る
+            </Link>
+            <Link
+              href="/admin/events/new"
+              className="inline-flex items-center justify-center rounded-2xl bg-[#4db7e5] px-4 py-3 text-sm font-extrabold text-white shadow-[0_8px_18px_rgba(55,166,214,0.22)]"
+            >
+              ＋ イベント作成
+            </Link>
+          </div>
         </div>
 
         <section className="mt-6 grid gap-3 sm:grid-cols-3">
@@ -121,9 +131,8 @@ export default async function AdminPage() {
                 イベント一覧
               </h2>
             </div>
-
             <span className="rounded-full bg-[#fff4bf] px-3 py-1.5 text-[11px] font-extrabold text-[#7f681d]">
-              最新8件
+              {events.length}件表示
             </span>
           </div>
 
@@ -131,65 +140,86 @@ export default async function AdminPage() {
             {events.map((event) => (
               <div
                 key={event.id}
-                className="flex flex-col gap-3 py-4 first:pt-0 last:pb-0 sm:flex-row sm:items-center sm:justify-between"
+                className="flex flex-col gap-4 py-5 first:pt-0 last:pb-0"
               >
-                <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <p className="truncate font-extrabold">
-                      {event.name}
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="truncate font-extrabold">
+                        {event.name}
+                      </p>
+                      <span
+                        className={`rounded-full px-2.5 py-1 text-[10px] font-extrabold ${
+                          event.isActive
+                            ? "bg-[#e8f8ee] text-[#47865d]"
+                            : "bg-[#f2f4f5] text-[#7c8a91]"
+                        }`}
+                      >
+                        {event.isActive ? "公開中" : "非公開"}
+                      </span>
+                    </div>
+
+                    <p className="mt-1.5 text-xs font-medium text-[#80939d]">
+                      {new Intl.DateTimeFormat("ja-JP", {
+                        dateStyle: "long",
+                        timeStyle: "short",
+                        timeZone: "Asia/Tokyo",
+                      }).format(event.eventDate)}
+                      {event.venue ? ` ・ ${event.venue}` : ""}
                     </p>
-                    <span
-                      className={`rounded-full px-2.5 py-1 text-[10px] font-extrabold ${
-                        event.isActive
-                          ? "bg-[#e8f8ee] text-[#47865d]"
-                          : "bg-[#f2f4f5] text-[#7c8a91]"
-                      }`}
-                    >
-                      {event.isActive ? "公開中" : "非公開"}
-                    </span>
+
+                    <p className="mt-1 text-xs font-bold text-[#607783]">
+                      {event._count.eventCompanies}社 /{" "}
+                      {event._count.eventPeople}名
+                    </p>
                   </div>
 
-                  <p className="mt-1.5 text-xs font-medium text-[#80939d]">
-                    {new Intl.DateTimeFormat("ja-JP", {
-                      dateStyle: "long",
-                    }).format(event.eventDate)}
-                    {event.venue ? ` ・ ${event.venue}` : ""}
-                  </p>
-
-                  <p className="mt-1 text-xs font-bold text-[#607783]">
-                    {event._count.eventCompanies}社 /{" "}
-                    {event._count.eventPeople}名
-                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    <Link
+                      href={`/admin/events/${event.id}/edit`}
+                      className="rounded-xl bg-[#edf4f7] px-3 py-2 text-xs font-extrabold text-[#57717e]"
+                    >
+                      編集
+                    </Link>
+                    <Link
+                      href={`/admin/events/${event.id}/qr`}
+                      className="inline-flex items-center gap-1.5 rounded-xl bg-[#e6f7ff] px-3 py-2 text-xs font-extrabold text-[#258fbd]"
+                    >
+                      <Icon name="qr" className="h-3.5 w-3.5" />
+                      会場QR
+                    </Link>
+                    {event.isActive ? (
+                      <Link
+                        href={`/events/${event.id}`}
+                        className="rounded-xl bg-[#fff5c9] px-3 py-2 text-xs font-extrabold text-[#76641f]"
+                      >
+                        公開画面
+                      </Link>
+                    ) : null}
+                  </div>
                 </div>
 
                 <div className="flex flex-wrap gap-2">
-                  <Link
-                    href={`/admin/events/${event.id}/qr`}
-                    className="inline-flex items-center gap-1.5 rounded-xl bg-[#e6f7ff] px-3 py-2 text-xs font-extrabold text-[#258fbd]"
-                  >
-                    <Icon name="qr" className="h-3.5 w-3.5" />
-                    会場QR
-                  </Link>
-                  <Link
-                    href={`/events/${event.id}`}
-                    className="rounded-xl bg-[#f3f8fa] px-3 py-2 text-xs font-extrabold text-[#607783]"
-                  >
-                    公開画面
-                  </Link>
-                  <Link
-                    href={`/events/${event.id}/companies`}
-                    className="rounded-xl bg-[#fff5c9] px-3 py-2 text-xs font-extrabold text-[#76641f]"
-                  >
-                    参加企業
-                  </Link>
+                  <AdminEventActions
+                    eventId={event.id}
+                    isActive={event.isActive}
+                  />
                 </div>
               </div>
             ))}
 
             {events.length === 0 ? (
-              <p className="py-7 text-center text-sm text-[#7e919b]">
-                イベントがまだありません。
-              </p>
+              <div className="py-8 text-center">
+                <p className="text-sm font-bold text-[#7e919b]">
+                  イベントがまだありません。
+                </p>
+                <Link
+                  href="/admin/events/new"
+                  className="mt-4 inline-flex rounded-2xl bg-[#4db7e5] px-4 py-3 text-sm font-extrabold text-white"
+                >
+                  最初のイベントを作成
+                </Link>
+              </div>
             ) : null}
           </div>
         </section>

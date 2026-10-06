@@ -79,6 +79,7 @@ model Event {
   description    String?
   slug           String               @unique
   isActive       Boolean              @default(true)
+  deletedAt      DateTime?
   eventCompanies EventCompany[]
   eventPeople    EventPerson[]
   sessions       ParticipantSession[]
@@ -87,6 +88,7 @@ model Event {
   updatedAt      DateTime             @updatedAt
 
   @@index([eventDate])
+  @@index([deletedAt])
 }
 
 model EventCompany {
