@@ -31,12 +31,22 @@ export default async function MyQrPage({
             <p className="mt-2 text-sm leading-6 text-[#718792]">
               この端末でプロフィール登録すると、個人QRやプロフィール編集を利用できます。
             </p>
-            <Link
-              href={`/events/${eventId}/register`}
-              className="mt-5 inline-flex rounded-2xl bg-[#4db7e5] px-5 py-3 text-sm font-extrabold text-white"
-            >
-              プロフィール登録へ
-            </Link>
+            <div className="mt-5 grid gap-3">
+              <Link
+                href={`/events/${eventId}/register`}
+                className="inline-flex w-full items-center justify-center rounded-2xl bg-[#4db7e5] px-5 py-3 text-sm font-extrabold text-white"
+              >
+                プロフィール登録へ
+              </Link>
+
+              <Link
+                href={`/events/${eventId}/login`}
+                className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-[#d9eaf2] bg-white px-5 py-3 text-sm font-extrabold text-[#3f7f99]"
+              >
+                <Icon name="lock" className="h-4 w-4" />
+                以前登録した方はこちら
+              </Link>
+            </div>
           </section>
         </main>
       </AppShell>
