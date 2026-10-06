@@ -3,8 +3,11 @@ export const MAX_FACE_PHOTO_BYTES = 5 * 1024 * 1024;
 
 const PHONE_PATTERN = /^[0-9+()\-\s]{8,25}$/;
 const POSTAL_CODE_PATTERN = /^\d{3}-?\d{4}$/;
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-type RegistrationBody = {
+type ProfileBody = {
+  companyId?: unknown;
+  companyAccessCode?: unknown;
   company?: {
     name?: unknown;
     phone?: unknown;
@@ -18,6 +21,7 @@ type RegistrationBody = {
   person?: {
     name?: unknown;
     photoUrl?: unknown;
+    email?: unknown;
     department?: unknown;
     position?: unknown;
     phone?: unknown;
@@ -51,26 +55,55 @@ function validHttpUrl(value: string) {
   }
 }
 
-export function validateRegistrationBody(body: RegistrationBody) {
-  const company = body.company;
-  const person = body.person;
+export function validatePersonFields(person: ProfileBody["person"], requirePhoto: boolean) {
+  const name = text(person?.name);
+  const photoUrl = text(person?.photoUrl);
+  const email = optionalText(person?.email);
+  const department = optionalText(person?.department);
+  const position = optionalText(person?.position);
+  const phone = optionalText(person?.phone);
+  const responsibility = optionalText(person?.responsibility);
+  const profile = optionalText(person?.profile);
 
-  const companyName = text(company?.name);
-  const companyPhone = optionalText(company?.phone);
+  if (!name) return { ok: false as const, error: "氏名は必須です。" };
+  if (requirePhoto && !photoUrl) {
+    return { ok: false as const, error: "顔写真は必須です。" };
+  }
+
+  for (const [label, value] of [
+    ["氏名", name],
+    ["メールアドレス", email],
+    ["部署", department],
+    ["役職", position],
+    ["担当者電話番号", phone],
+    ["担当業務", responsibility],
+    ["自己紹介", profile],
+  ] as const) {
+    const error = checkLength(label, value);
+    if (error) return { ok: false as const, error };
+  }
+
+  if (phone && !PHONE_PATTERN.test(phone)) {
+    return { ok: false as const, error: "担当者電話番号の形式が正しくありません。" };
+  }
+  if (email && !EMAIL_PATTERN.test(email)) {
+    return { ok: false as const, error: "メールアドレスの形式が正しくありません。" };
+  }
+
+  return {
+    ok: true as const,
+    data: { name, photoUrl, email, department, position, phone, responsibility, profile },
+  };
+}
+
+export function validateCompanyFields(company: ProfileBody["company"]) {
+  const name = text(company?.name);
+  const phone = optionalText(company?.phone);
   const postalCode = optionalText(company?.postalCode);
   const address = optionalText(company?.address);
   const websiteUrl = optionalText(company?.websiteUrl);
   const businessDescription = text(company?.businessDescription);
-  const companyProfile = optionalText(company?.profile);
-
-  const personName = text(person?.name);
-  const photoUrl = text(person?.photoUrl);
-  const department = optionalText(person?.department);
-  const position = optionalText(person?.position);
-  const personPhone = optionalText(person?.phone);
-  const responsibility = optionalText(person?.responsibility);
-  const personProfile = optionalText(person?.profile);
-
+  const profile = optionalText(company?.profile);
   const industryIds = Array.isArray(company?.industryIds)
     ? Array.from(
         new Set(
@@ -82,46 +115,29 @@ export function validateRegistrationBody(body: RegistrationBody) {
       )
     : [];
 
-  if (!companyName) {
-    return { ok: false as const, error: "企業名は必須です。" };
-  }
+  if (!name) return { ok: false as const, error: "企業名は必須です。" };
   if (industryIds.length === 0) {
     return { ok: false as const, error: "業界を1つ以上選択してください。" };
   }
   if (!businessDescription) {
     return { ok: false as const, error: "事業内容は必須です。" };
   }
-  if (!personName) {
-    return { ok: false as const, error: "氏名は必須です。" };
-  }
-  if (!photoUrl) {
-    return { ok: false as const, error: "顔写真は必須です。" };
-  }
 
   for (const [label, value] of [
-    ["企業名", companyName],
-    ["会社電話番号", companyPhone],
+    ["企業名", name],
+    ["会社電話番号", phone],
     ["郵便番号", postalCode],
     ["住所", address],
     ["Webサイト", websiteUrl],
     ["事業内容", businessDescription],
-    ["企業プロフィール", companyProfile],
-    ["氏名", personName],
-    ["部署", department],
-    ["役職", position],
-    ["担当者電話番号", personPhone],
-    ["担当業務", responsibility],
-    ["自己紹介", personProfile],
+    ["企業プロフィール", profile],
   ] as const) {
     const error = checkLength(label, value);
     if (error) return { ok: false as const, error };
   }
 
-  if (companyPhone && !PHONE_PATTERN.test(companyPhone)) {
+  if (phone && !PHONE_PATTERN.test(phone)) {
     return { ok: false as const, error: "会社電話番号の形式が正しくありません。" };
-  }
-  if (personPhone && !PHONE_PATTERN.test(personPhone)) {
-    return { ok: false as const, error: "担当者電話番号の形式が正しくありません。" };
   }
   if (postalCode && !POSTAL_CODE_PATTERN.test(postalCode)) {
     return { ok: false as const, error: "郵便番号は123-4567の形式で入力してください。" };
@@ -132,26 +148,54 @@ export function validateRegistrationBody(body: RegistrationBody) {
 
   return {
     ok: true as const,
+    data: { name, phone, postalCode, address, websiteUrl, industryIds, businessDescription, profile },
+  };
+}
+
+export function validateRegistrationBody(body: ProfileBody) {
+  const person = validatePersonFields(body.person, true);
+  if (!person.ok) return person;
+
+  const companyId = text(body.companyId);
+  const companyAccessCode = text(body.companyAccessCode);
+
+  if (companyId) {
+    if (!companyAccessCode) {
+      return { ok: false as const, error: "企業参加コードを入力してください。" };
+    }
+    return {
+      ok: true as const,
+      data: {
+        mode: "existing" as const,
+        companyId,
+        companyAccessCode,
+        person: person.data,
+      },
+    };
+  }
+
+  const company = validateCompanyFields(body.company);
+  if (!company.ok) return company;
+
+  return {
+    ok: true as const,
     data: {
-      company: {
-        name: companyName,
-        phone: companyPhone,
-        postalCode,
-        address,
-        websiteUrl,
-        industryIds,
-        businessDescription,
-        profile: companyProfile,
-      },
-      person: {
-        name: personName,
-        photoUrl,
-        department,
-        position,
-        phone: personPhone,
-        responsibility,
-        profile: personProfile,
-      },
+      mode: "new" as const,
+      company: company.data,
+      person: person.data,
     },
+  };
+}
+
+export function validateProfileEditBody(body: ProfileBody) {
+  const person = validatePersonFields(body.person, false);
+  if (!person.ok) return person;
+
+  const company = validateCompanyFields(body.company);
+  if (!company.ok) return company;
+
+  return {
+    ok: true as const,
+    data: { company: company.data, person: person.data },
   };
 }

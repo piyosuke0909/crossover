@@ -6,7 +6,7 @@ export async function POST(
   _request: Request,
   context: { params: Promise<{ eventId: string; personId: string }> },
 ) {
-  const { eventId, personId } = await context.params;
+  const { eventId, personId: qrToken } = await context.params;
   const participant = await getCurrentParticipant(eventId);
 
   if (!participant) {
@@ -16,34 +16,26 @@ export async function POST(
     );
   }
 
-  if (participant.personId === personId) {
-    return NextResponse.json(
-      { error: "自分自身は「話した人」に追加できません。" },
-      { status: 400 },
-    );
-  }
-
-  const target = await prisma.eventPerson.findUnique({
-    where: {
-      eventId_personId: {
-        eventId,
-        personId,
-      },
-    },
+  const target = await prisma.eventPerson.findFirst({
+    where: { eventId, qrToken },
     select: {
-      person: {
-        select: { id: true, isHidden: true },
-      },
-      event: {
-        select: { isActive: true },
-      },
+      personId: true,
+      person: { select: { id: true, isHidden: true } },
+      event: { select: { isActive: true, deletedAt: true } },
     },
   });
 
-  if (!target?.event.isActive || target.person.isHidden) {
+  if (!target?.event.isActive || target.event.deletedAt || target.person.isHidden) {
     return NextResponse.json(
       { error: "この参加者は見つかりません。" },
       { status: 404 },
+    );
+  }
+
+  if (participant.personId === target.personId) {
+    return NextResponse.json(
+      { error: "自分自身は「話した人」に追加できません。" },
+      { status: 400 },
     );
   }
 
@@ -52,21 +44,19 @@ export async function POST(
       eventId_ownerPersonId_metPersonId: {
         eventId,
         ownerPersonId: participant.personId,
-        metPersonId: personId,
+        metPersonId: target.personId,
       },
     },
     select: { id: true },
   });
 
-  if (existing) {
-    return NextResponse.json({ created: false });
-  }
+  if (existing) return NextResponse.json({ created: false });
 
   await prisma.encounter.create({
     data: {
       eventId,
       ownerPersonId: participant.personId,
-      metPersonId: personId,
+      metPersonId: target.personId,
     },
   });
 

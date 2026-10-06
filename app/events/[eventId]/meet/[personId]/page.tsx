@@ -10,26 +10,23 @@ export default async function MeetPersonPage({
 }: {
   params: Promise<{ eventId: string; personId: string }>;
 }) {
-  const { eventId, personId } = await params;
+  const { eventId, personId: qrToken } = await params;
 
-  const participation = await prisma.eventPerson.findUnique({
-    where: {
-      eventId_personId: { eventId, personId },
-    },
+  const participation = await prisma.eventPerson.findFirst({
+    where: { eventId, qrToken },
     include: {
       event: {
-        select: { id: true, name: true, isActive: true },
+        select: { id: true, name: true, isActive: true, deletedAt: true },
       },
       person: {
-        include: {
-          company: true,
-        },
+        include: { company: true },
       },
     },
   });
 
   if (
     !participation?.event.isActive ||
+    participation.event.deletedAt ||
     participation.person.isHidden ||
     participation.person.company.isHidden
   ) {
@@ -59,7 +56,7 @@ export default async function MeetPersonPage({
           </p>
         </section>
 
-        <MeetRegistrar eventId={event.id} personId={person.id} />
+        <MeetRegistrar eventId={event.id} personId={qrToken} />
       </main>
     </AppShell>
   );

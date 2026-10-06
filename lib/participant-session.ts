@@ -40,6 +40,11 @@ export async function getCurrentParticipant(eventId: string) {
               },
             },
           },
+          eventPeople: {
+            where: { eventId },
+            select: { qrToken: true },
+            take: 1,
+          },
         },
       },
     },

@@ -33,6 +33,7 @@ model Person {
   company         Company              @relation(fields: [companyId], references: [id], onDelete: Cascade)
   name            String
   photoUrl        String
+  email           String?
   department      String?
   position        String?
   phone           String?
@@ -107,6 +108,7 @@ model EventPerson {
   id       String   @id @default(cuid())
   eventId  String
   personId String
+  qrToken  String   @unique @default(cuid())
   event    Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
   person   Person   @relation(fields: [personId], references: [id], onDelete: Cascade)
   joinedAt DateTime @default(now())
