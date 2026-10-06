@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import prisma from "@/lib/prisma";
 import AppShell from "@/components/app-shell";
+import BackLink from "@/components/back-link";
 import { Icon } from "@/components/icons";
 
 export const dynamic = "force-dynamic";
@@ -36,11 +37,7 @@ export default async function CompaniesPage({
         company: {
           isHidden: false,
           ...(industryId
-            ? {
-                industries: {
-                  some: { industryId },
-                },
-              }
+            ? { industries: { some: { industryId } } }
             : {}),
           ...(q
             ? {
@@ -69,9 +66,7 @@ export default async function CompaniesPage({
       include: {
         company: {
           include: {
-            industries: {
-              include: { industry: true },
-            },
+            industries: { include: { industry: true } },
             people: {
               where: {
                 isHidden: false,
@@ -89,24 +84,18 @@ export default async function CompaniesPage({
   return (
     <AppShell eventId={event.id}>
       <main className="mx-auto w-full max-w-5xl px-4 pb-32 pt-5 sm:px-6 sm:pt-8">
-        <div className="flex items-end justify-between gap-4">
-          <div>
-            <p className="text-xs font-bold tracking-[0.16em] text-[#4aaed9]">
-              DISCOVER
-            </p>
-            <h1 className="mt-1 text-2xl font-extrabold tracking-tight">
-              参加企業を探す
-            </h1>
-            <p className="mt-1.5 text-sm font-medium text-[#7a8e99]">
-              {rows.length}社が見つかりました
-            </p>
-          </div>
-          <Link
-            href={`/events/${event.id}`}
-            className="rounded-full bg-[#e6f7ff] px-3 py-2 text-xs font-bold text-[#279fd1]"
-          >
-            イベント
-          </Link>
+        <BackLink href={`/events/${event.id}`}>イベントへ戻る</BackLink>
+
+        <div className="mt-5">
+          <p className="text-xs font-bold tracking-[0.16em] text-[#4aaed9]">
+            DISCOVER
+          </p>
+          <h1 className="mt-1 text-2xl font-extrabold tracking-tight">
+            参加企業を探す
+          </h1>
+          <p className="mt-1.5 text-sm font-medium text-[#7a8e99]">
+            {rows.length}社が見つかりました
+          </p>
         </div>
 
         <form className="mt-5 rounded-[26px] border border-[#e1eef4] bg-white p-4 shadow-[0_10px_28px_rgba(50,99,121,0.08)]">
@@ -119,25 +108,31 @@ export default async function CompaniesPage({
               name="q"
               defaultValue={q}
               placeholder="企業名・担当者・事業内容で検索"
-              className="w-full rounded-2xl border border-[#d9eaf2] bg-[#f8fcfe] py-3.5 pl-12 pr-4 text-sm font-medium outline-none transition placeholder:text-[#9aadb6] focus:border-[#65bfe7] focus:bg-white focus:ring-4 focus:ring-[#dff5ff]"
+              className="h-12 w-full rounded-2xl border border-[#d9eaf2] bg-[#f8fcfe] pl-12 pr-4 text-sm font-medium outline-none transition placeholder:text-[#9aadb6] focus:border-[#65bfe7] focus:bg-white focus:ring-4 focus:ring-[#dff5ff]"
             />
           </div>
 
-          <div className="mt-3 grid gap-3 sm:grid-cols-[1fr_auto]">
-            <select
-              name="industry"
-              defaultValue={industryId}
-              className="w-full rounded-2xl border border-[#d9eaf2] bg-white px-4 py-3.5 text-sm font-semibold outline-none focus:border-[#65bfe7] focus:ring-4 focus:ring-[#dff5ff]"
-            >
-              <option value="">すべての業界</option>
-              {industries.map((industry) => (
-                <option key={industry.id} value={industry.id}>
-                  {industry.name}
-                </option>
-              ))}
-            </select>
+          <div className="mt-3 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
+            <div className="relative min-w-0">
+              <select
+                name="industry"
+                defaultValue={industryId}
+                className="h-12 w-full appearance-none rounded-2xl border border-[#d9eaf2] bg-white pl-4 pr-12 text-sm font-semibold text-[#36515f] outline-none transition focus:border-[#65bfe7] focus:ring-4 focus:ring-[#dff5ff]"
+              >
+                <option value="">すべての業界</option>
+                {industries.map((industry) => (
+                  <option key={industry.id} value={industry.id}>
+                    {industry.name}
+                  </option>
+                ))}
+              </select>
+              <span className="pointer-events-none absolute inset-y-0 right-3 grid w-7 place-items-center text-[#6f8b99]">
+                <Icon name="chevron-down" className="h-4 w-4" />
+              </span>
+            </div>
 
-            <button className="rounded-2xl bg-[#4db7e5] px-6 py-3.5 text-sm font-extrabold text-white shadow-[0_8px_18px_rgba(55,166,214,0.25)] transition hover:bg-[#37a9da]">
+            <button className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-[#4db7e5] px-6 text-sm font-extrabold text-white shadow-[0_8px_18px_rgba(55,166,214,0.25)] transition hover:bg-[#37a9da]">
+              <Icon name="search" className="h-4 w-4" />
               検索する
             </button>
           </div>
@@ -151,11 +146,11 @@ export default async function CompaniesPage({
               className="group overflow-hidden rounded-[28px] border border-[#e1eef4] bg-white p-5 shadow-[0_10px_28px_rgba(50,99,121,0.075)] transition hover:-translate-y-0.5 hover:shadow-[0_16px_34px_rgba(50,99,121,0.12)]"
             >
               <div className="flex items-start justify-between gap-3">
-                <div className="flex flex-wrap gap-1.5">
+                <div className="flex min-w-0 flex-wrap gap-1.5">
                   {company.industries.map(({ industry }, index) => (
                     <span
                       key={industry.id}
-                      className={`rounded-full px-3 py-1.5 text-[11px] font-extrabold ${
+                      className={`max-w-full rounded-full px-3 py-1.5 text-[11px] font-extrabold ${
                         index % 2 === 0
                           ? "bg-[#e7f7ff] text-[#258fbd]"
                           : "bg-[#fff4bf] text-[#846d1c]"
@@ -165,16 +160,15 @@ export default async function CompaniesPage({
                     </span>
                   ))}
                 </div>
-                <Icon
-                  name="chevron"
-                  className="h-5 w-5 shrink-0 text-[#a7b8c0] transition group-hover:translate-x-1"
-                />
+                <span className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-[#f4f9fb] text-[#8ea5b0] transition group-hover:translate-x-0.5 group-hover:bg-[#e7f7ff] group-hover:text-[#279fd1]">
+                  <Icon name="chevron" className="h-4 w-4" />
+                </span>
               </div>
 
-              <h2 className="mt-4 text-lg font-extrabold leading-snug">
+              <h2 className="mt-4 break-words text-lg font-extrabold leading-snug">
                 {company.name}
               </h2>
-              <p className="mt-2 line-clamp-2 text-sm leading-6 text-[#667d88]">
+              <p className="mt-2 line-clamp-2 break-words text-sm leading-6 text-[#667d88]">
                 {company.businessDescription}
               </p>
 
@@ -183,8 +177,8 @@ export default async function CompaniesPage({
                   <p className="mb-3 text-[11px] font-bold text-[#82959f]">
                     参加担当者
                   </p>
-                  <div className="flex items-center">
-                    <div className="flex -space-x-2">
+                  <div className="flex min-w-0 items-center">
+                    <div className="flex shrink-0 -space-x-2">
                       {company.people.slice(0, 4).map((person) => (
                         <img
                           key={person.id}
@@ -194,7 +188,7 @@ export default async function CompaniesPage({
                         />
                       ))}
                     </div>
-                    <div className="ml-3 min-w-0 text-sm font-bold text-[#4e6673]">
+                    <div className="ml-3 min-w-0 truncate text-sm font-bold text-[#4e6673]">
                       {company.people[0]?.name}
                       {company.people.length > 1
                         ? ` ほか${company.people.length - 1}名`

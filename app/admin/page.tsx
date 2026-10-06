@@ -46,23 +46,25 @@ export default async function AdminPage() {
   return (
     <div className="min-h-screen bg-[#f5fbfe] text-[#173042]">
       <header className="border-b border-[#e1eef4] bg-white">
-        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
-          <div className="flex items-center gap-3">
-            <span className="grid h-9 w-9 place-items-center rounded-2xl bg-[#4db7e5] font-extrabold text-white">
+        <div className="mx-auto flex min-h-16 max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
+          <div className="flex min-w-0 items-center gap-3">
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-2xl bg-[#4db7e5] font-extrabold text-white">
               C
             </span>
-            <div>
+            <div className="min-w-0">
               <p className="text-[10px] font-extrabold tracking-[0.16em] text-[#6faac2]">
                 CROSSOVER
               </p>
-              <p className="text-sm font-extrabold">管理者ポータル</p>
+              <p className="truncate text-sm font-extrabold">
+                管理者ポータル
+              </p>
             </div>
           </div>
 
           <form action="/api/admin/logout" method="post">
-            <button className="inline-flex items-center gap-2 rounded-2xl bg-[#f3f8fa] px-3 py-2 text-xs font-extrabold text-[#607783] hover:bg-[#eaf4f8]">
-              <Icon name="logout" className="h-4 w-4" />
-              ログアウト
+            <button className="inline-flex min-h-10 items-center gap-2 rounded-2xl border border-[#e2edf2] bg-[#f8fbfc] px-3 py-2 text-xs font-extrabold text-[#607783] transition hover:bg-[#eef6f9]">
+              <Icon name="logout" className="h-4 w-4 shrink-0" />
+              <span className="hidden sm:inline">ログアウト</span>
             </button>
           </form>
         </div>
@@ -82,18 +84,19 @@ export default async function AdminPage() {
             </p>
           </div>
 
-          <div className="flex flex-wrap gap-2">
+          <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
             <Link
               href="/"
-              className="inline-flex items-center justify-center rounded-2xl bg-white px-4 py-3 text-sm font-extrabold text-[#378cab] shadow-sm ring-1 ring-[#dfeef4]"
+              className="inline-flex min-h-11 items-center justify-center rounded-2xl border border-[#dfeef4] bg-white px-4 py-3 text-sm font-extrabold text-[#378cab] shadow-sm"
             >
-              公開サイトを見る
+              公開サイト
             </Link>
             <Link
               href="/admin/events/new"
-              className="inline-flex items-center justify-center rounded-2xl bg-[#4db7e5] px-4 py-3 text-sm font-extrabold text-white shadow-[0_8px_18px_rgba(55,166,214,0.22)]"
+              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl bg-[#4db7e5] px-4 py-3 text-sm font-extrabold text-white shadow-[0_8px_18px_rgba(55,166,214,0.22)]"
             >
-              ＋ イベント作成
+              <Icon name="plus" className="h-4 w-4 shrink-0" />
+              イベント作成
             </Link>
           </div>
         </div>
@@ -131,25 +134,25 @@ export default async function AdminPage() {
                 イベント一覧
               </h2>
             </div>
-            <span className="rounded-full bg-[#fff4bf] px-3 py-1.5 text-[11px] font-extrabold text-[#7f681d]">
-              {events.length}件表示
+            <span className="shrink-0 rounded-full bg-[#fff4bf] px-3 py-1.5 text-[11px] font-extrabold text-[#7f681d]">
+              {events.length}件
             </span>
           </div>
 
-          <div className="mt-5 divide-y divide-[#edf3f6]">
+          <div className="mt-5 grid gap-4">
             {events.map((event) => (
-              <div
+              <article
                 key={event.id}
-                className="flex flex-col gap-4 py-5 first:pt-0 last:pb-0"
+                className="rounded-[22px] border border-[#e7f0f4] bg-[#fbfdfe] p-4 sm:p-5"
               >
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div className="flex min-w-0 flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
-                      <p className="truncate font-extrabold">
+                      <p className="break-words font-extrabold">
                         {event.name}
                       </p>
                       <span
-                        className={`rounded-full px-2.5 py-1 text-[10px] font-extrabold ${
+                        className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-extrabold ${
                           event.isActive
                             ? "bg-[#e8f8ee] text-[#47865d]"
                             : "bg-[#f2f4f5] text-[#7c8a91]"
@@ -159,7 +162,7 @@ export default async function AdminPage() {
                       </span>
                     </div>
 
-                    <p className="mt-1.5 text-xs font-medium text-[#80939d]">
+                    <p className="mt-2 break-words text-xs font-medium leading-5 text-[#80939d]">
                       {new Intl.DateTimeFormat("ja-JP", {
                         dateStyle: "long",
                         timeStyle: "short",
@@ -174,49 +177,49 @@ export default async function AdminPage() {
                     </p>
                   </div>
 
-                  <div className="flex flex-wrap gap-2">
+                  <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap lg:justify-end">
                     <Link
                       href={`/admin/events/${event.id}/edit`}
-                      className="rounded-xl bg-[#edf4f7] px-3 py-2 text-xs font-extrabold text-[#57717e]"
+                      className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-[#dce8ed] bg-white px-3.5 py-2 text-xs font-extrabold text-[#57717e]"
                     >
+                      <Icon name="pencil" className="h-4 w-4 shrink-0" />
                       編集
                     </Link>
                     <Link
                       href={`/admin/events/${event.id}/qr`}
-                      className="inline-flex items-center gap-1.5 rounded-xl bg-[#e6f7ff] px-3 py-2 text-xs font-extrabold text-[#258fbd]"
+                      className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-[#cfe8f3] bg-[#edf9ff] px-3.5 py-2 text-xs font-extrabold text-[#258fbd]"
                     >
-                      <Icon name="qr" className="h-3.5 w-3.5" />
+                      <Icon name="qr" className="h-4 w-4 shrink-0" />
                       会場QR
                     </Link>
                     {event.isActive ? (
                       <Link
                         href={`/events/${event.id}`}
-                        className="rounded-xl bg-[#fff5c9] px-3 py-2 text-xs font-extrabold text-[#76641f]"
+                        className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-[#eee1a8] bg-[#fff8d8] px-3.5 py-2 text-xs font-extrabold text-[#76641f]"
                       >
+                        <Icon name="eye" className="h-4 w-4 shrink-0" />
                         公開画面
                       </Link>
                     ) : null}
+                    <AdminEventActions
+                      eventId={event.id}
+                      isActive={event.isActive}
+                    />
                   </div>
                 </div>
-
-                <div className="flex flex-wrap gap-2">
-                  <AdminEventActions
-                    eventId={event.id}
-                    isActive={event.isActive}
-                  />
-                </div>
-              </div>
+              </article>
             ))}
 
             {events.length === 0 ? (
-              <div className="py-8 text-center">
+              <div className="rounded-[22px] border border-dashed border-[#d7e8ef] py-8 text-center">
                 <p className="text-sm font-bold text-[#7e919b]">
                   イベントがまだありません。
                 </p>
                 <Link
                   href="/admin/events/new"
-                  className="mt-4 inline-flex rounded-2xl bg-[#4db7e5] px-4 py-3 text-sm font-extrabold text-white"
+                  className="mt-4 inline-flex min-h-11 items-center gap-2 rounded-2xl bg-[#4db7e5] px-4 py-3 text-sm font-extrabold text-white"
                 >
+                  <Icon name="plus" className="h-4 w-4" />
                   最初のイベントを作成
                 </Link>
               </div>

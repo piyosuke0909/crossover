@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { Icon } from "@/components/icons";
 
 export default function AdminEventActions({
   eventId,
@@ -59,20 +60,26 @@ export default function AdminEventActions({
         type="button"
         disabled={busy}
         onClick={togglePublish}
-        className={
+        className={`inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border px-3.5 py-2 text-xs font-extrabold transition disabled:opacity-50 ${
           isActive
-            ? "rounded-xl bg-[#fff1ef] px-3 py-2 text-xs font-extrabold text-[#b35b55] disabled:opacity-50"
-            : "rounded-xl bg-[#e8f8ee] px-3 py-2 text-xs font-extrabold text-[#47865d] disabled:opacity-50"
-        }
+            ? "border-[#f0d8d4] bg-[#fff7f5] text-[#a95852] hover:bg-[#fff0ed]"
+            : "border-[#cfe9d8] bg-[#f2fbf5] text-[#47865d] hover:bg-[#e8f8ee]"
+        }`}
       >
+        <Icon
+          name={isActive ? "eye-off" : "eye"}
+          className="h-4 w-4 shrink-0"
+        />
         {isActive ? "非公開にする" : "公開する"}
       </button>
+
       <button
         type="button"
         disabled={busy}
         onClick={remove}
-        className="rounded-xl bg-[#f5f5f5] px-3 py-2 text-xs font-extrabold text-[#7c6b6b] disabled:opacity-50"
+        className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-[#e9dddd] bg-white px-3.5 py-2 text-xs font-extrabold text-[#8b6161] transition hover:bg-[#fff5f5] disabled:opacity-50"
       >
+        <Icon name="trash" className="h-4 w-4 shrink-0" />
         削除
       </button>
     </>

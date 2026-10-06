@@ -1,6 +1,6 @@
 import type { SVGProps } from "react";
 
-type IconName =
+export type IconName =
   | "home"
   | "building"
   | "user-plus"
@@ -8,6 +8,8 @@ type IconName =
   | "calendar"
   | "pin"
   | "chevron"
+  | "chevron-left"
+  | "chevron-down"
   | "phone"
   | "globe"
   | "users"
@@ -16,7 +18,12 @@ type IconName =
   | "logout"
   | "sparkles"
   | "qr"
-  | "handshake";
+  | "handshake"
+  | "pencil"
+  | "trash"
+  | "eye"
+  | "eye-off"
+  | "plus";
 
 type IconProps = SVGProps<SVGSVGElement> & { name: IconName };
 
@@ -24,111 +31,139 @@ export function Icon({ name, className = "h-5 w-5", ...props }: IconProps) {
   const common = {
     fill: "none",
     stroke: "currentColor",
-    strokeWidth: 1.9,
+    strokeWidth: 2,
     strokeLinecap: "round" as const,
     strokeLinejoin: "round" as const,
   };
 
   return (
-    <svg viewBox="0 0 24 24" aria-hidden="true" className={className} {...props}>
+    <svg
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      className={className}
+      {...common}
+      {...props}
+    >
       {name === "home" && (
         <>
-          <path {...common} d="M3.5 10.5 12 3.8l8.5 6.7" />
-          <path {...common} d="M5.5 9.8v9.4h13V9.8" />
-          <path {...common} d="M9.4 19.2v-5.4h5.2v5.4" />
+          <path d="m3 11 9-8 9 8" />
+          <path d="M5 10v10h14V10" />
+          <path d="M9 20v-6h6v6" />
         </>
       )}
       {name === "building" && (
         <>
-          <path {...common} d="M4.5 20V5.5h10V20" />
-          <path {...common} d="M14.5 9.5h5V20" />
-          <path {...common} d="M8 9h3M8 13h3M8 17h3M17 13h.01M17 17h.01" />
-          <path {...common} d="M2.8 20h18.4" />
+          <rect x="4" y="3" width="12" height="18" rx="2" />
+          <path d="M16 8h4v13h-4M8 7h4M8 11h4M8 15h4M8 19h4" />
         </>
       )}
       {name === "user-plus" && (
         <>
-          <circle {...common} cx="9" cy="8" r="3.2" />
-          <path {...common} d="M3.8 19c.4-3.5 2.3-5.4 5.2-5.4s4.8 1.9 5.2 5.4" />
-          <path {...common} d="M18 7v6M15 10h6" />
+          <circle cx="9" cy="8" r="4" />
+          <path d="M2.5 21a6.5 6.5 0 0 1 13 0M19 8v6M16 11h6" />
         </>
       )}
       {name === "search" && (
         <>
-          <circle {...common} cx="10.7" cy="10.7" r="5.7" />
-          <path {...common} d="m15 15 4.5 4.5" />
+          <circle cx="11" cy="11" r="7" />
+          <path d="m20 20-4-4" />
         </>
       )}
       {name === "calendar" && (
         <>
-          <rect {...common} x="4" y="5.5" width="16" height="14" rx="2.5" />
-          <path {...common} d="M7.5 3.5v4M16.5 3.5v4M4 9.5h16" />
+          <rect x="3" y="5" width="18" height="16" rx="2" />
+          <path d="M16 3v4M8 3v4M3 10h18" />
         </>
       )}
       {name === "pin" && (
         <>
-          <path {...common} d="M12 21s6-5.4 6-11a6 6 0 1 0-12 0c0 5.6 6 11 6 11Z" />
-          <circle {...common} cx="12" cy="10" r="2" />
+          <path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z" />
+          <circle cx="12" cy="10" r="2.5" />
         </>
       )}
-      {name === "chevron" && <path {...common} d="m9 6 6 6-6 6" />}
+      {name === "chevron" && <path d="m9 18 6-6-6-6" />}
+      {name === "chevron-left" && <path d="m15 18-6-6 6-6" />}
+      {name === "chevron-down" && <path d="m6 9 6 6 6-6" />}
       {name === "phone" && (
-        <path {...common} d="M7.2 4.2 9.4 8l-1.7 1.7a14 14 0 0 0 6.6 6.6l1.7-1.7 3.8 2.2-.7 3.1c-.2.7-.8 1.1-1.5 1.1C9.6 21 3 14.4 3 6.4c0-.7.5-1.3 1.1-1.5l3.1-.7Z" />
+        <path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.4 19.4 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 2 .7 2.8a2 2 0 0 1-.5 2.1L8.1 9.8a16 16 0 0 0 6 6l1.2-1.2a2 2 0 0 1 2.1-.5c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.8 2.1Z" />
       )}
       {name === "globe" && (
         <>
-          <circle {...common} cx="12" cy="12" r="8.5" />
-          <path {...common} d="M3.8 12h16.4M12 3.5c2 2.3 3 5.1 3 8.5s-1 6.2-3 8.5c-2-2.3-3-5.1-3-8.5s1-6.2 3-8.5Z" />
+          <circle cx="12" cy="12" r="9" />
+          <path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18" />
         </>
       )}
       {name === "users" && (
         <>
-          <circle {...common} cx="9" cy="9" r="3" />
-          <path {...common} d="M3.8 19c.4-3.4 2.2-5.1 5.2-5.1s4.8 1.7 5.2 5.1" />
-          <path {...common} d="M15.8 7.2a2.7 2.7 0 0 1 0 5.2M16.7 14.4c2.2.6 3.3 2.1 3.5 4.6" />
+          <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+          <circle cx="9" cy="7" r="4" />
+          <path d="M22 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8" />
         </>
       )}
       {name === "briefcase" && (
         <>
-          <rect {...common} x="3.5" y="7.5" width="17" height="11.5" rx="2" />
-          <path {...common} d="M8.5 7.5V5.7c0-.9.7-1.7 1.7-1.7h3.6c.9 0 1.7.8 1.7 1.7v1.8M3.5 12.5h17M10 12.5v2h4v-2" />
+          <rect x="3" y="7" width="18" height="13" rx="2" />
+          <path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M3 12h18M10 12v2h4v-2" />
         </>
       )}
       {name === "lock" && (
         <>
-          <rect {...common} x="5" y="10" width="14" height="10" rx="2.5" />
-          <path {...common} d="M8 10V7.7a4 4 0 0 1 8 0V10" />
+          <rect x="4" y="10" width="16" height="11" rx="2" />
+          <path d="M8 10V7a4 4 0 0 1 8 0v3" />
         </>
       )}
       {name === "logout" && (
         <>
-          <path {...common} d="M10 5H5.8A1.8 1.8 0 0 0 4 6.8v10.4A1.8 1.8 0 0 0 5.8 19H10" />
-          <path {...common} d="M14.5 8 18.5 12l-4 4M18 12H9" />
+          <path d="M10 17l5-5-5-5M15 12H3" />
+          <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
         </>
       )}
       {name === "sparkles" && (
         <>
-          <path {...common} d="m12 3 1.1 3.2L16 7.4l-2.9 1.2L12 12l-1.1-3.4L8 7.4l2.9-1.2L12 3Z" />
-          <path {...common} d="m18.5 12.5.7 2 1.8.7-1.8.8-.7 2-.7-2-1.8-.8 1.8-.7.7-2Z" />
-          <path {...common} d="m5.5 13 .7 2 1.8.7-1.8.8-.7 2-.7-2-1.8-.8 1.8-.7.7-2Z" />
+          <path d="m12 3-1.1 3.2L8 7.5l2.9 1.3L12 12l1.1-3.2L16 7.5l-2.9-1.3L12 3Z" />
+          <path d="m19 13-.8 2.2L16 16l2.2.8L19 19l.8-2.2L22 16l-2.2-.8L19 13Z" />
+          <path d="m5 13-.8 2.2L2 16l2.2.8L5 19l.8-2.2L8 16l-2.2-.8L5 13Z" />
         </>
       )}
       {name === "qr" && (
         <>
-          <rect {...common} x="3.5" y="3.5" width="6" height="6" rx="1" />
-          <rect {...common} x="14.5" y="3.5" width="6" height="6" rx="1" />
-          <rect {...common} x="3.5" y="14.5" width="6" height="6" rx="1" />
-          <path {...common} d="M14.5 14.5h2v2h-2zM18.5 14.5h2v2h-2zM14.5 18.5h2v2h-2zM18.5 18.5h2" />
+          <rect x="3" y="3" width="7" height="7" rx="1" />
+          <rect x="14" y="3" width="7" height="7" rx="1" />
+          <rect x="3" y="14" width="7" height="7" rx="1" />
+          <path d="M14 14h3v3h-3zM18 14h3M18 18h3v3h-3M14 19v2" />
         </>
       )}
       {name === "handshake" && (
         <>
-          <path {...common} d="m8.5 9.5 2.4-2.3a2.3 2.3 0 0 1 3.2 0l1.4 1.4" />
-          <path {...common} d="m4 9 3.3-3.3 3 2.3-4.6 4.6a1.8 1.8 0 0 0 2.5 2.6l3.2-3.2" />
-          <path {...common} d="m16.7 6 3.3 3.3-6.5 6.5a2 2 0 0 1-2.8 0l-.5-.5" />
-          <path {...common} d="m12.8 13.5 1.4 1.4M14.8 11.5l1.4 1.4" />
+          <path d="m11 17 2 2a2 2 0 0 0 3-3l-3-3" />
+          <path d="m14 14 2 2a2 2 0 0 0 3-3l-4.5-4.5a2 2 0 0 0-2.8 0L10 10.2a2 2 0 0 1-2.8-2.8l1.6-1.6" />
+          <path d="m7 8-3-3-3 3 6 6M17 8l3-3 3 3-6 6" />
         </>
       )}
+      {name === "pencil" && (
+        <>
+          <path d="M12 20h9" />
+          <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z" />
+        </>
+      )}
+      {name === "trash" && (
+        <>
+          <path d="M3 6h18M8 6V4h8v2M19 6l-1 15H6L5 6M10 11v6M14 11v6" />
+        </>
+      )}
+      {name === "eye" && (
+        <>
+          <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z" />
+          <circle cx="12" cy="12" r="3" />
+        </>
+      )}
+      {name === "eye-off" && (
+        <>
+          <path d="m3 3 18 18" />
+          <path d="M10.6 10.6a2 2 0 0 0 2.8 2.8M9.9 4.2A11 11 0 0 1 12 4c6.5 0 10 8 10 8a18 18 0 0 1-2.1 3.3M6.6 6.6C3.5 8.4 2 12 2 12s3.5 8 10 8a10 10 0 0 0 4.4-1" />
+        </>
+      )}
+      {name === "plus" && <path d="M12 5v14M5 12h14" />}
     </svg>
   );
 }
