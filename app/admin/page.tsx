@@ -146,6 +146,10 @@ export default async function AdminPage() {
                         <Icon name="qr" className="h-4 w-4" />
                         会場QR
                       </Link>
+                      <Link href={`/admin/events/${event.id}/transfer`} className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-[#d7e6df] bg-[#f3fbf6] px-3.5 py-2 text-xs font-extrabold text-[#4b805d]">
+                        <Icon name="swap" className="h-4 w-4" />
+                        参加者移行
+                      </Link>
                       {event.isActive ? (
                         <Link href={`/events/${event.id}`} className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-[#eee1a8] bg-[#fff8d8] px-3.5 py-2 text-xs font-extrabold text-[#76641f]">
                           <Icon name="eye" className="h-4 w-4" />

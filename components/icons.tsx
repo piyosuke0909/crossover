@@ -25,7 +25,10 @@ export type IconName =
   | "eye-off"
   | "plus"
   | "person"
-  | "download";
+  | "download"
+  | "mail"
+  | "key"
+  | "swap";
 
 const MATERIAL_ICON: Record<IconName, string> = {
   home: "home",
@@ -53,6 +56,9 @@ const MATERIAL_ICON: Record<IconName, string> = {
   plus: "add",
   person: "account_circle",
   download: "download",
+  mail: "mail",
+  key: "key",
+  swap: "swap_horiz",
 };
 
 function inferFontSize(className: string) {

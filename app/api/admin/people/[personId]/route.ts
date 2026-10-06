@@ -29,19 +29,29 @@ export async function PATCH(
 
   const existing = await prisma.person.findUnique({
     where: { id: personId },
-    select: { photoUrl: true },
+    select: { photoUrl: true, email: true },
   });
   if (!existing) {
     return NextResponse.json({ error: "担当者が見つかりません。" }, { status: 404 });
   }
 
   const person = validation.data;
+  const previousEmail = existing.email?.trim().toLowerCase() ?? "";
+  const nextEmail = person.email?.trim().toLowerCase() ?? "";
+  const emailChanged = previousEmail !== nextEmail;
+
   await prisma.person.update({
     where: { id: personId },
     data: {
       name: person.name,
       photoUrl: person.photoUrl || existing.photoUrl,
       email: person.email,
+      ...(emailChanged
+        ? {
+            emailVerifiedAt: null,
+            emailOtpEnabled: false,
+          }
+        : {}),
       department: person.department,
       position: person.position,
       phone: person.phone,

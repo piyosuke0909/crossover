@@ -5,6 +5,7 @@ import { Icon } from "@/components/icons";
 import { getCurrentParticipant } from "@/lib/participant-session";
 import { getRequestOrigin } from "@/lib/request-origin";
 import { getCompanyAccessCodeFromCookie } from "@/lib/company-access";
+import LoginSettings from "@/components/login-settings";
 
 export const dynamic = "force-dynamic";
 
@@ -141,6 +142,12 @@ export default async function MyQrPage({
             </div>
           </section>
         ) : null}
+
+        <LoginSettings
+          eventId={eventId}
+          email={person.email}
+          initialOtpEnabled={person.emailOtpEnabled}
+        />
 
         <section className="mt-5 grid gap-3 sm:grid-cols-2">
           <Link

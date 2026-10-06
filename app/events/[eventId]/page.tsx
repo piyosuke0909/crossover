@@ -63,9 +63,16 @@ export default async function EventPage({
         {
           href: `/events/${event.id}/register`,
           title: "プロフィール登録",
-          sub: "参加情報を登録する",
+          sub: "初めて参加する方はこちら",
           icon: "user-plus" as const,
           iconClass: "bg-[#fff3b8] text-[#8d711a]",
+        },
+        {
+          href: `/events/${event.id}/login`,
+          title: "以前登録した方",
+          sub: "OTP・再ログインIDで戻る",
+          icon: "lock" as const,
+          iconClass: "bg-[#edf9f1] text-[#4b9a68]",
         },
       ];
 

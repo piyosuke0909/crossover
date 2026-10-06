@@ -7,6 +7,11 @@ datasource db {
   provider = "postgresql"
 }
 
+enum EmailOtpPurpose {
+  LOGIN
+  VERIFY_EMAIL
+}
+
 model Company {
   id                  String             @id @default(cuid())
   name                String
@@ -28,27 +33,32 @@ model Company {
 }
 
 model Person {
-  id              String               @id @default(cuid())
-  companyId       String
-  company         Company              @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  name            String
-  photoUrl        String
-  email           String?
-  department      String?
-  position        String?
-  phone           String?
-  responsibility  String?
-  profile         String?
-  isHidden        Boolean              @default(false)
-  eventPeople     EventPerson[]
-  sessions        ParticipantSession[]
-  encountersOwned Encounter[]          @relation("EncounterOwner")
-  encountersMet   Encounter[]          @relation("EncounterMet")
-  createdAt       DateTime             @default(now())
-  updatedAt       DateTime             @updatedAt
+  id                    String                  @id @default(cuid())
+  companyId             String
+  company               Company                 @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  name                  String
+  photoUrl              String
+  email                 String?
+  emailVerifiedAt       DateTime?
+  emailOtpEnabled       Boolean                 @default(false)
+  department            String?
+  position              String?
+  phone                 String?
+  responsibility        String?
+  profile               String?
+  isHidden              Boolean                 @default(false)
+  eventPeople           EventPerson[]
+  sessions              ParticipantSession[]
+  encountersOwned       Encounter[]             @relation("EncounterOwner")
+  encountersMet         Encounter[]             @relation("EncounterMet")
+  loginCredentials      PersonLoginCredential[]
+  emailOtpChallenges    EmailOtpChallenge[]
+  createdAt             DateTime                @default(now())
+  updatedAt             DateTime                @updatedAt
 
   @@index([companyId])
   @@index([name])
+  @@index([email])
 }
 
 model Industry {
@@ -128,6 +138,36 @@ model ParticipantSession {
   person    Person   @relation(fields: [personId], references: [id], onDelete: Cascade)
 
   @@index([eventId, personId])
+  @@index([expiresAt])
+}
+
+model PersonLoginCredential {
+  id         String    @id @default(cuid())
+  personId   String
+  person     Person    @relation(fields: [personId], references: [id], onDelete: Cascade)
+  codeHash   String    @unique
+  createdAt  DateTime  @default(now())
+  revokedAt  DateTime?
+  lastUsedAt DateTime?
+
+  @@index([personId])
+}
+
+model EmailOtpChallenge {
+  id         String          @id @default(cuid())
+  personId   String
+  person     Person          @relation(fields: [personId], references: [id], onDelete: Cascade)
+  eventId    String?
+  purpose    EmailOtpPurpose
+  email      String
+  codeHash   String
+  attempts   Int             @default(0)
+  expiresAt  DateTime
+  consumedAt DateTime?
+  createdAt  DateTime        @default(now())
+
+  @@index([personId, purpose, createdAt])
+  @@index([eventId, email])
   @@index([expiresAt])
 }
 

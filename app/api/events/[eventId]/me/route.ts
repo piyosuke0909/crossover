@@ -35,6 +35,9 @@ export async function PATCH(
   }
 
   const photoUrl = person.photoUrl || participant.person.photoUrl;
+  const previousEmail = participant.person.email?.trim().toLowerCase() ?? "";
+  const nextEmail = person.email?.trim().toLowerCase() ?? "";
+  const emailChanged = previousEmail !== nextEmail;
 
   await prisma.$transaction(async (tx) => {
     await tx.company.update({
@@ -66,6 +69,12 @@ export async function PATCH(
         name: person.name,
         photoUrl,
         email: person.email,
+        ...(emailChanged
+          ? {
+              emailVerifiedAt: null,
+              emailOtpEnabled: false,
+            }
+          : {}),
         department: person.department,
         position: person.position,
         phone: person.phone,

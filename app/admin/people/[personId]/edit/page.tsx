@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import prisma from "@/lib/prisma";
 import BackLink from "@/components/back-link";
 import AdminPersonForm from "@/components/admin-person-form";
+import AdminReloginButton from "@/components/admin-relogin-button";
 
 export const dynamic = "force-dynamic";
 
@@ -27,6 +28,11 @@ export default async function EditPersonPage({
           <p className="text-xs font-extrabold tracking-[0.16em] text-[#4aaed9]">PERSON DETAIL</p>
           <h1 className="mt-1 text-2xl font-extrabold">{person.name}</h1>
           <p className="mt-2 text-sm font-bold text-[#728792]">{person.company.name}</p>
+
+          <AdminReloginButton
+            personId={person.id}
+            email={person.email}
+          />
 
           <AdminPersonForm
             person={{
