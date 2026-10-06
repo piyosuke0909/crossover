@@ -6,22 +6,31 @@ import { Icon } from "@/components/icons";
 
 export default function BottomNav({ eventId }: { eventId: string }) {
   const pathname = usePathname();
+  const eventBase = `/events/${eventId}`;
+  const relativePath = pathname.startsWith(eventBase)
+    ? pathname.slice(eventBase.length)
+    : "";
+  const activeSegment = relativePath.split("/").filter(Boolean)[0] ?? "";
+
   const items = [
-    { href: `/events/${eventId}`, label: "ホーム", icon: "home" as const },
+    { href: eventBase, label: "ホーム", icon: "home" as const, segment: "" },
     {
-      href: `/events/${eventId}/companies`,
+      href: `${eventBase}/companies`,
       label: "企業",
       icon: "building" as const,
+      segment: "companies",
     },
     {
-      href: `/events/${eventId}/met`,
+      href: `${eventBase}/met`,
       label: "話した人",
       icon: "handshake" as const,
+      segment: "met",
     },
     {
-      href: `/events/${eventId}/me`,
+      href: `${eventBase}/me`,
       label: "自分",
       icon: "person" as const,
+      segment: "me",
     },
   ];
 
@@ -29,10 +38,7 @@ export default function BottomNav({ eventId }: { eventId: string }) {
     <nav className="fixed inset-x-0 bottom-3 z-40 px-3 sm:bottom-5">
       <div className="mx-auto grid max-w-md grid-cols-4 rounded-[28px] border border-white/80 bg-white/95 p-2 shadow-[0_14px_40px_rgba(43,99,126,0.18)] backdrop-blur">
         {items.map((item) => {
-          const active =
-            item.href === `/events/${eventId}`
-              ? pathname === item.href
-              : pathname === item.href || pathname.startsWith(`${item.href}/`);
+          const active = activeSegment === item.segment;
 
           return (
             <Link
