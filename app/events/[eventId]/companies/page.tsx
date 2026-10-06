@@ -4,6 +4,8 @@ import prisma from "@/lib/prisma";
 import AppShell from "@/components/app-shell";
 import BackLink from "@/components/back-link";
 import { Icon } from "@/components/icons";
+import { getCurrentParticipant } from "@/lib/participant-session";
+import MetPersonStarButton from "@/components/met-person-star-button";
 
 export const dynamic = "force-dynamic";
 
@@ -26,7 +28,7 @@ export default async function CompaniesPage({
 
   if (!event?.isActive) notFound();
 
-  const [industries, rows] = await Promise.all([
+  const [industries, rows, participant] = await Promise.all([
     prisma.industry.findMany({
       where: { isActive: true },
       orderBy: { name: "asc" },
@@ -79,7 +81,22 @@ export default async function CompaniesPage({
       },
       orderBy: { joinedAt: "asc" },
     }),
+    getCurrentParticipant(eventId),
   ]);
+
+  const metPersonIds = new Set(
+    participant
+      ? (
+          await prisma.encounter.findMany({
+            where: {
+              eventId,
+              ownerPersonId: participant.personId,
+            },
+            select: { metPersonId: true },
+          })
+        ).map((encounter) => encounter.metPersonId)
+      : [],
+  );
 
   return (
     <AppShell eventId={event.id}>
@@ -140,64 +157,90 @@ export default async function CompaniesPage({
 
         <div className="mt-5 grid gap-4 sm:grid-cols-2">
           {rows.map(({ company }) => (
-            <Link
+            <article
               key={company.id}
-              href={`/events/${event.id}/companies/${company.id}`}
-              className="group overflow-hidden rounded-[28px] border border-[#e1eef4] bg-white p-5 shadow-[0_10px_28px_rgba(50,99,121,0.075)] transition hover:-translate-y-0.5 hover:shadow-[0_16px_34px_rgba(50,99,121,0.12)]"
+              className="overflow-hidden rounded-[28px] border border-[#e1eef4] bg-white shadow-[0_10px_28px_rgba(50,99,121,0.075)]"
             >
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex min-w-0 flex-wrap gap-1.5">
-                  {company.industries.map(({ industry }, index) => (
-                    <span
-                      key={industry.id}
-                      className={`max-w-full rounded-full px-3 py-1.5 text-[11px] font-extrabold ${
-                        index % 2 === 0
-                          ? "bg-[#e7f7ff] text-[#258fbd]"
-                          : "bg-[#fff4bf] text-[#846d1c]"
-                      }`}
-                    >
-                      {industry.name}
-                    </span>
-                  ))}
+              <Link
+                href={`/events/${event.id}/companies/${company.id}`}
+                className="group block p-5 transition hover:bg-[#fbfdfe]"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex min-w-0 flex-wrap gap-1.5">
+                    {company.industries.map(({ industry }, index) => (
+                      <span
+                        key={industry.id}
+                        className={`max-w-full rounded-full px-3 py-1.5 text-[11px] font-extrabold ${
+                          index % 2 === 0
+                            ? "bg-[#e7f7ff] text-[#258fbd]"
+                            : "bg-[#fff4bf] text-[#846d1c]"
+                        }`}
+                      >
+                        {industry.name}
+                      </span>
+                    ))}
+                  </div>
+                  <span className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-[#f4f9fb] text-[#8ea5b0] transition group-hover:translate-x-0.5 group-hover:bg-[#e7f7ff] group-hover:text-[#279fd1]">
+                    <Icon name="chevron" className="h-4 w-4" />
+                  </span>
                 </div>
-                <span className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-[#f4f9fb] text-[#8ea5b0] transition group-hover:translate-x-0.5 group-hover:bg-[#e7f7ff] group-hover:text-[#279fd1]">
-                  <Icon name="chevron" className="h-4 w-4" />
-                </span>
-              </div>
 
-              <h2 className="mt-4 break-words text-lg font-extrabold leading-snug">
-                {company.name}
-              </h2>
-              <p className="mt-2 line-clamp-2 break-words text-sm leading-6 text-[#667d88]">
-                {company.businessDescription}
-              </p>
+                <h2 className="mt-4 break-words text-lg font-extrabold leading-snug">
+                  {company.name}
+                </h2>
+                <p className="mt-2 line-clamp-2 break-words text-sm leading-6 text-[#667d88]">
+                  {company.businessDescription}
+                </p>
+              </Link>
 
               {company.people.length > 0 ? (
-                <div className="mt-5 border-t border-[#edf3f6] pt-4">
-                  <p className="mb-3 text-[11px] font-bold text-[#82959f]">
-                    参加担当者
-                  </p>
-                  <div className="flex min-w-0 items-center">
-                    <div className="flex shrink-0 -space-x-2">
-                      {company.people.slice(0, 4).map((person) => (
+                <div className="border-t border-[#edf3f6] px-5 pb-5 pt-4">
+                  <div className="mb-3 flex items-center justify-between gap-3">
+                    <p className="text-[11px] font-bold text-[#82959f]">
+                      参加担当者
+                    </p>
+                    <p className="text-[10px] font-bold text-[#9aabb3]">
+                      ☆で「話した人」に登録
+                    </p>
+                  </div>
+
+                  <div className="grid gap-2.5">
+                    {company.people.map((person) => (
+                      <div
+                        key={person.id}
+                        className="flex min-w-0 items-center gap-3 rounded-2xl bg-[#f8fbfc] p-2.5"
+                      >
                         <img
-                          key={person.id}
                           src={person.photoUrl}
                           alt={person.name}
-                          className="h-10 w-10 rounded-full border-2 border-white object-cover shadow-sm"
+                          className="h-11 w-11 shrink-0 rounded-2xl object-cover"
                         />
-                      ))}
-                    </div>
-                    <div className="ml-3 min-w-0 truncate text-sm font-bold text-[#4e6673]">
-                      {company.people[0]?.name}
-                      {company.people.length > 1
-                        ? ` ほか${company.people.length - 1}名`
-                        : ""}
-                    </div>
+                        <Link
+                          href={`/events/${event.id}/companies/${company.id}`}
+                          className="min-w-0 flex-1"
+                        >
+                          <span className="block truncate text-sm font-extrabold text-[#36515f]">
+                            {person.name}
+                          </span>
+                          <span className="mt-0.5 block truncate text-[11px] font-medium text-[#82959f]">
+                            {[person.department, person.position]
+                              .filter(Boolean)
+                              .join(" / ") || "所属情報なし"}
+                          </span>
+                        </Link>
+                        <MetPersonStarButton
+                          eventId={event.id}
+                          personId={person.id}
+                          initialSelected={metPersonIds.has(person.id)}
+                          canEdit={Boolean(participant)}
+                          isSelf={participant?.personId === person.id}
+                        />
+                      </div>
+                    ))}
                   </div>
                 </div>
               ) : null}
-            </Link>
+            </article>
           ))}
 
           {rows.length === 0 ? (
