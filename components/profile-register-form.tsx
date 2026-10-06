@@ -12,7 +12,11 @@ type CompanyResult = {
   businessDescription: string;
   industries: Industry[];
 };
-type Props = { eventId: string; industries: Industry[] };
+type Props = {
+  eventId: string;
+  industries: Industry[];
+  businessCardScanEnabled: boolean;
+};
 
 const MAX_TEXT = 200;
 const MAX_PHOTO_BYTES = 5 * 1024 * 1024;
@@ -35,7 +39,11 @@ const emptyFields = {
   personProfile: "",
 };
 
-export default function ProfileRegisterForm({ eventId, industries }: Props) {
+export default function ProfileRegisterForm({
+  eventId,
+  industries,
+  businessCardScanEnabled,
+}: Props) {
   const router = useRouter();
   const cardInputRef = useRef<HTMLInputElement>(null);
   const [mode, setMode] = useState<"new" | "existing">("new");
@@ -52,6 +60,7 @@ export default function ProfileRegisterForm({ eventId, industries }: Props) {
     "idle" | "scanning" | "searching" | "uploading" | "saving" | "error"
   >("idle");
   const [error, setError] = useState("");
+  const [scanNotice, setScanNotice] = useState<"success" | "error" | null>(null);
 
   function updateField(name: keyof typeof fields, value: string) {
     setFields((current) => ({ ...current, [name]: value }));
@@ -114,8 +123,13 @@ export default function ProfileRegisterForm({ eventId, industries }: Props) {
   }
 
   async function scanBusinessCard(file: File) {
+    if (!businessCardScanEnabled) return;
+
+    setScanNotice(null);
+
     if (!ALLOWED_PHOTO_TYPES.has(file.type) || file.size > MAX_PHOTO_BYTES) {
-      setError("名刺画像はJPEG / PNG / WebP、5MB以内にしてください。");
+      setScanNotice("error");
+      setError("");
       return;
     }
 
@@ -165,10 +179,12 @@ export default function ProfileRegisterForm({ eventId, industries }: Props) {
         }
       }
 
+      setScanNotice("success");
       setStatus("idle");
-    } catch (e) {
+    } catch {
       setStatus("error");
-      setError(e instanceof Error ? e.message : "名刺の解析に失敗しました。");
+      setScanNotice("error");
+      setError("");
     } finally {
       if (cardInputRef.current) cardInputRef.current.value = "";
     }
@@ -339,9 +355,18 @@ export default function ProfileRegisterForm({ eventId, industries }: Props) {
               />
               <button
                 type="button"
-                disabled={status === "scanning"}
+                disabled={!businessCardScanEnabled || status === "scanning"}
                 onClick={() => cardInputRef.current?.click()}
-                className="inline-flex min-h-10 items-center gap-2 rounded-2xl border border-[#cde7f2] bg-[#f1faff] px-3.5 py-2 text-xs font-extrabold text-[#278fb9] disabled:opacity-50"
+                title={
+                  businessCardScanEnabled
+                    ? "名刺画像をAIで解析して入力します"
+                    : "GEMINI_API_KEYが設定されていないため利用できません"
+                }
+                className={`inline-flex min-h-10 items-center gap-2 rounded-2xl border px-3.5 py-2 text-xs font-extrabold transition ${
+                  businessCardScanEnabled
+                    ? "border-[#cde7f2] bg-[#f1faff] text-[#278fb9]"
+                    : "cursor-not-allowed border-[#e2e7e9] bg-[#f1f3f4] text-[#a2adb2]"
+                } disabled:opacity-70`}
               >
                 <Icon name="sparkles" className="h-4 w-4" />
                 {status === "scanning" ? "名刺を解析中..." : "名刺から入力"}
@@ -352,6 +377,24 @@ export default function ProfileRegisterForm({ eventId, industries }: Props) {
           <p className="mt-3 rounded-2xl bg-[#f7fbfd] px-4 py-3 text-xs leading-5 text-[#6f8490]">
             名刺画像は入力補助のためAI解析へ送信され、CrossoverのBlobやDBには保存しません。解析結果は登録前に確認できます。
           </p>
+
+          {!businessCardScanEnabled ? (
+            <p className="mt-3 rounded-2xl border border-[#e2e7e9] bg-[#f4f5f6] px-4 py-3 text-xs font-bold text-[#87949a]">
+              名刺解析は現在利用できません。
+            </p>
+          ) : null}
+
+          {scanNotice === "success" ? (
+            <p className="mt-3 rounded-2xl border border-[#cfe9d8] bg-[#eefaf2] px-4 py-3 text-sm font-extrabold text-[#4b805d]">
+              解析が成功しました。
+            </p>
+          ) : null}
+
+          {scanNotice === "error" ? (
+            <p className="mt-3 rounded-2xl border border-[#ffd7d7] bg-[#fff4f4] px-4 py-3 text-sm font-extrabold text-[#b94e4e]">
+              エラーが発生しました。
+            </p>
+          ) : null}
 
           <div className="mt-6 grid gap-5">
             <label className={labelClass}>
