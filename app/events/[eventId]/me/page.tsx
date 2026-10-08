@@ -6,6 +6,8 @@ import { getCurrentParticipant } from "@/lib/participant-session";
 import { getRequestOrigin } from "@/lib/request-origin";
 import { getCompanyAccessCodeFromCookie } from "@/lib/company-access";
 import LoginSettings from "@/components/login-settings";
+import CompanyVerifiedBadge from "@/components/company-verified-badge";
+import CompanyVerificationForm from "@/components/company-verification-form";
 
 export const dynamic = "force-dynamic";
 
@@ -99,6 +101,11 @@ export default async function MyQrPage({
             <p className="mt-1 text-sm font-bold text-[#607783]">
               {person.company.name}
             </p>
+            {person.companyVerifiedAt ? (
+              <div className="mt-3 flex justify-center">
+                <CompanyVerifiedBadge />
+              </div>
+            ) : null}
 
             <div className="mt-3 flex flex-wrap justify-center gap-1.5">
               {person.company.industries.map(({ industry }) => (
@@ -152,6 +159,11 @@ export default async function MyQrPage({
             </div>
           </section>
         ) : null}
+
+        <CompanyVerificationForm
+          eventId={eventId}
+          verified={Boolean(person.companyVerifiedAt)}
+        />
 
         <LoginSettings
           eventId={eventId}
