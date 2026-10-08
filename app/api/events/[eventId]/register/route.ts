@@ -46,16 +46,16 @@ export async function POST(
   let companyAccessCode = "";
 
   if (validation.data.mode === "existing") {
-    const allowed = await verifyCompanyAccess(
-      validation.data.companyId,
-      validation.data.companyAccessCode,
-    );
-
-    if (!allowed) {
-      return NextResponse.json(
-        { error: "企業参加コードが正しくありません。" },
-        { status: 403 },
-      );
+    // Code is optional: affiliation without a valid code remains unverified.
+    const suppliedCode = validation.data.companyAccessCode.trim().toUpperCase();
+    if (suppliedCode) {
+      const allowed = await verifyCompanyAccess(validation.data.companyId, suppliedCode);
+      if (!allowed) {
+        return NextResponse.json(
+          { error: "企業参加コードが正しくありません。コードを直すか、空欄で登録してください。" },
+          { status: 403 },
+        );
+      }
     }
 
     const company = await prisma.company.findFirst({
@@ -71,7 +71,7 @@ export async function POST(
     }
 
     companyId = company.id;
-    companyAccessCode = validation.data.companyAccessCode.trim().toUpperCase();
+    companyAccessCode = suppliedCode;
   } else {
     const industryIds = validation.data.company.industryIds;
     const industries = await prisma.industry.findMany({
@@ -141,6 +141,9 @@ export async function POST(
         companyId: resolvedCompanyId,
         name: person.name,
         photoUrl: person.photoUrl,
+        companyVerifiedAt: validation.data.mode === "existing" && companyAccessCode
+          ? new Date()
+          : null,
         email: person.email,
         department: person.department,
         position: person.position,
@@ -192,17 +195,20 @@ export async function POST(
     path: "/",
     expires: expiresAt,
   });
-  response.cookies.set(
-    companyAccessCookieName(result.companyId),
-    companyAccessCode,
-    {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      path: "/",
-      maxAge: 60 * 60 * 24 * 365,
-    },
-  );
+  // Never give an unverified applicant a company participation code.
+  if (companyAccessCode) {
+    response.cookies.set(
+      companyAccessCookieName(result.companyId),
+      companyAccessCode,
+      {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        path: "/",
+        maxAge: 60 * 60 * 24 * 365,
+      },
+    );
+  }
 
   return response;
 }
