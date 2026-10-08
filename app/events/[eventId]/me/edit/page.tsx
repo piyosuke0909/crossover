@@ -41,6 +41,7 @@ export default async function EditMyProfilePage({
         </div>
 
         <ProfileEditForm
+          canEditCompany={Boolean(person.companyVerifiedAt)}
           eventId={eventId}
           industries={industries.map(({ id, name }) => ({ id, name }))}
           initial={{
