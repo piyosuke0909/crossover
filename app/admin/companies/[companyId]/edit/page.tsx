@@ -41,6 +41,8 @@ export default async function EditCompanyPage({
               id: company.id,
               name: company.name,
               phone: company.phone ?? "",
+              showPhone: company.showPhone,
+              showAddress: company.showAddress,
               postalCode: company.postalCode ?? "",
               address: company.address ?? "",
               websiteUrl: company.websiteUrl ?? "",
