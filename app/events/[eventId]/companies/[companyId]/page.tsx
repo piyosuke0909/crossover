@@ -196,7 +196,7 @@ export default async function CompanyDetailPage({
                   </h3>
                   {person.companyVerifiedAt ? (
                     <div className="mt-2"><CompanyVerifiedBadge compact /></div>
-                  ) : null
+                  ) : null}
                   <p className="mt-1 break-words text-xs font-semibold text-[#7d919b]">
                     {[person.department, person.position]
                       .filter(Boolean)
