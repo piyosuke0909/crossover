@@ -135,7 +135,7 @@ export default async function CompanyDetailPage({
               <div>
                 <dt className="text-xs font-bold text-[#8497a1]">会社情報</dt>
               </div>
-              {company.phone ? (
+              {company.showPhone && company.phone ? (
                 <div className="mt-4 border-t border-[#e7f0f4] pt-4">
                   <dt className="text-xs font-bold text-[#8497a1]">
                     電話番号
