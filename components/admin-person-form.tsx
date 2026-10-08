@@ -11,6 +11,7 @@ type PersonValue = {
   department: string;
   position: string;
   phone: string;
+  showPhone: boolean;
   responsibility: string;
   profile: string;
 };
@@ -69,6 +70,10 @@ export default function AdminPersonForm({ person }: { person: PersonValue }) {
       <div className="grid gap-5 sm:grid-cols-2">
         <label className="block text-sm font-extrabold">電話番号
           <input type="tel" maxLength={25} pattern="[0-9+() -]{8,25}" value={value.phone} onChange={(e) => setValue({ ...value, phone: e.target.value })} className={inputClass} />
+          <span className="mt-2 flex items-center gap-2 text-xs font-semibold text-[#607783]">
+            <input type="checkbox" checked={value.showPhone} onChange={(e) => setValue({ ...value, showPhone: e.target.checked })} />
+            担当者電話番号を公開する
+          </span>
         </label>
         <label className="block text-sm font-extrabold">メールアドレス
           <input type="email" maxLength={200} value={value.email} onChange={(e) => setValue({ ...value, email: e.target.value })} className={inputClass} />
