@@ -3,6 +3,7 @@
 import { FormEvent, useState } from "react";
 import { upload } from "@vercel/blob/client";
 import { useRouter } from "next/navigation";
+import PublicProfilePreview from "@/components/public-profile-preview";
 
 type Industry = { id: string; name: string };
 type Props = {
@@ -12,6 +13,8 @@ type Props = {
     company: {
       name: string;
       phone: string;
+      showPhone: boolean;
+      showAddress: boolean;
       postalCode: string;
       address: string;
       websiteUrl: string;
@@ -26,6 +29,7 @@ type Props = {
       department: string;
       position: string;
       phone: string;
+      showPhone: boolean;
       responsibility: string;
       profile: string;
     };
@@ -44,6 +48,7 @@ export default function ProfileEditForm({ eventId, industries, initial }: Props)
   const [photo, setPhoto] = useState<File | null>(null);
   const [status, setStatus] = useState<"idle" | "saving" | "uploading">("idle");
   const [error, setError] = useState("");
+  const [review, setReview] = useState(false);
 
   const inputClass =
     "mt-2 w-full rounded-2xl border border-[#d9eaf2] bg-[#f9fcfe] px-4 py-3.5 text-sm font-medium outline-none focus:border-[#62bde5] focus:bg-white focus:ring-4 focus:ring-[#def4fe]";
@@ -55,6 +60,11 @@ export default function ProfileEditForm({ eventId, industries, initial }: Props)
 
     if (industryIds.length === 0) {
       setError("業界を1つ以上選択してください。");
+      return;
+    }
+
+    if (!review) {
+      setReview(true);
       return;
     }
 
@@ -101,6 +111,7 @@ export default function ProfileEditForm({ eventId, industries, initial }: Props)
 
   return (
     <form onSubmit={submit} className="mt-5 space-y-5">
+      <div hidden={review} className="space-y-5">
       <section className="rounded-[28px] border border-[#e1eef4] bg-white p-5 sm:p-7">
         <h2 className="font-extrabold">会社情報</h2>
         <p className="mt-1 text-xs leading-5 text-[#80939d]">
@@ -151,6 +162,10 @@ export default function ProfileEditForm({ eventId, industries, initial }: Props)
           <div className="grid gap-5 sm:grid-cols-2">
             <label className={labelClass}>会社電話番号
               <input type="tel" maxLength={25} pattern="[0-9+() -]{8,25}" value={company.phone} onChange={(e) => setCompany({ ...company, phone: e.target.value })} className={inputClass} />
+              <span className="mt-2 flex gap-2 text-xs font-bold text-[#607783]">
+                <input type="checkbox" checked={company.showPhone} onChange={(e) => setCompany({ ...company, showPhone: e.target.checked })} />
+                この企業電話番号を公開する
+              </span>
             </label>
             <label className={labelClass}>郵便番号
               <input maxLength={8} pattern="\d{3}-?\d{4}" value={company.postalCode} onChange={(e) => setCompany({ ...company, postalCode: e.target.value })} className={inputClass} />
@@ -159,6 +174,10 @@ export default function ProfileEditForm({ eventId, industries, initial }: Props)
 
           <label className={labelClass}>住所
             <input maxLength={MAX_TEXT} value={company.address} onChange={(e) => setCompany({ ...company, address: e.target.value })} className={inputClass} />
+            <span className="mt-2 flex gap-2 text-xs font-bold text-[#607783]">
+              <input type="checkbox" checked={company.showAddress} onChange={(e) => setCompany({ ...company, showAddress: e.target.checked })} />
+              この会社住所を公開する
+            </span>
           </label>
           <label className={labelClass}>Webサイト
             <input type="url" maxLength={MAX_TEXT} value={company.websiteUrl} onChange={(e) => setCompany({ ...company, websiteUrl: e.target.value })} className={inputClass} />
@@ -194,6 +213,10 @@ export default function ProfileEditForm({ eventId, industries, initial }: Props)
           <div className="grid gap-5 sm:grid-cols-2">
             <label className={labelClass}>電話番号
               <input type="tel" maxLength={25} pattern="[0-9+() -]{8,25}" value={person.phone} onChange={(e) => setPerson({ ...person, phone: e.target.value })} className={inputClass} />
+              <span className="mt-2 flex gap-2 text-xs font-bold text-[#607783]">
+                <input type="checkbox" checked={person.showPhone} onChange={(e) => setPerson({ ...person, showPhone: e.target.checked })} />
+                この担当者電話番号を公開する
+              </span>
             </label>
             <label className={labelClass}>メールアドレス
               <input type="email" maxLength={MAX_TEXT} value={person.email} onChange={(e) => setPerson({ ...person, email: e.target.value })} className={inputClass} />
@@ -209,6 +232,27 @@ export default function ProfileEditForm({ eventId, industries, initial }: Props)
         </div>
       </section>
 
+      </div>
+      {review ? (
+        <div className="space-y-5">
+          <p className="rounded-2xl bg-[#e9f8ff] px-4 py-3 text-sm font-extrabold text-[#357d99]">
+            公開画面の見え方を確認してください。公開設定がOFFの項目は表示されません。
+          </p>
+          <PublicProfilePreview
+            company={{
+              ...company,
+              industries: industries.filter((item) => industryIds.includes(item.id)).map((item) => item.name),
+            }}
+            person={person}
+            photo={photo}
+            existingPhotoUrl={person.photoUrl}
+          />
+          <button type="button" onClick={() => { setReview(false); setError(""); }} className="w-full rounded-2xl border border-[#d9eaf2] bg-white px-4 py-3 text-sm font-extrabold text-[#3f7f99]">
+            入力画面に戻って修正する
+          </button>
+        </div>
+      ) : null}
+
       {error ? (
         <p className="rounded-2xl border border-[#ffd7d7] bg-[#fff4f4] px-4 py-3 text-sm font-bold text-[#b94e4e]">{error}</p>
       ) : null}
@@ -217,7 +261,7 @@ export default function ProfileEditForm({ eventId, industries, initial }: Props)
         disabled={status !== "idle"}
         className="w-full rounded-[22px] bg-[#4db7e5] px-5 py-4 font-extrabold text-white disabled:opacity-50"
       >
-        {status === "uploading" ? "画像アップロード中..." : status === "saving" ? "保存中..." : "変更を保存"}
+        {status === "uploading" ? "画像アップロード中..." : status === "saving" ? "保存中..." : review ? "確認して変更を保存" : "プレビューで確認する"}
       </button>
     </form>
   );
