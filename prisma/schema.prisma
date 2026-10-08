@@ -16,6 +16,8 @@ model Company {
   id                  String             @id @default(cuid())
   name                String
   phone               String?
+  showPhone           Boolean            @default(false)
+  showAddress         Boolean            @default(false)
   postalCode          String?
   address             String?
   websiteUrl          String?
@@ -44,6 +46,7 @@ model Person {
   department            String?
   position              String?
   phone                 String?
+  showPhone             Boolean                 @default(false)
   responsibility        String?
   profile               String?
   isHidden              Boolean                 @default(false)
