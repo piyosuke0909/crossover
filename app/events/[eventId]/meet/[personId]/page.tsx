@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import prisma from "@/lib/prisma";
 import AppShell from "@/components/app-shell";
+import CompanyVerifiedBadge from "@/components/company-verified-badge";
 import MeetRegistrar from "@/components/meet-registrar";
 
 export const dynamic = "force-dynamic";
@@ -48,6 +49,9 @@ export default async function MeetPersonPage({
             className="mx-auto mt-5 h-28 w-28 rounded-[32px] object-cover shadow-sm"
           />
           <h1 className="mt-4 text-2xl font-extrabold">{person.name}</h1>
+                  {person.companyVerifiedAt ? (
+                    <div className="mt-2 inline-flex"><CompanyVerifiedBadge compact /></div>
+                  ) : null}
           <p className="mt-1 text-sm font-bold text-[#6f8490]">
             {person.company.name}
           </p>
