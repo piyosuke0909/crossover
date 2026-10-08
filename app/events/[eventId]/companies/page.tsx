@@ -7,6 +7,7 @@ import { Icon } from "@/components/icons";
 import { getCurrentParticipant } from "@/lib/participant-session";
 import { companyEventSearchConditions } from "@/lib/company-event-search";
 import MetPersonStarButton from "@/components/met-person-star-button";
+import CompanyVerifiedBadge from "@/components/company-verified-badge";
 
 export const dynamic = "force-dynamic";
 
