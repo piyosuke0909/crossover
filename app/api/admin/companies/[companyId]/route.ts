@@ -43,6 +43,8 @@ export async function PATCH(
       data: {
         name: company.name,
         phone: company.phone,
+        showPhone: company.showPhone,
+        showAddress: company.showAddress,
         postalCode: company.postalCode,
         address: company.address,
         websiteUrl: company.websiteUrl,
