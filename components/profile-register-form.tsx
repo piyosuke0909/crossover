@@ -4,6 +4,7 @@ import { FormEvent, useRef, useState } from "react";
 import { upload } from "@vercel/blob/client";
 import { useRouter } from "next/navigation";
 import { Icon } from "@/components/icons";
+import PublicProfilePreview from "@/components/public-profile-preview";
 
 type Industry = { id: string; name: string };
 type CompanyResult = {
@@ -16,6 +17,7 @@ type Props = {
   eventId: string;
   industries: Industry[];
   businessCardScanEnabled: boolean;
+  businessCardScanUsed: boolean;
 };
 
 const MAX_TEXT = 200;
@@ -43,6 +45,7 @@ export default function ProfileRegisterForm({
   eventId,
   industries,
   businessCardScanEnabled,
+  businessCardScanUsed,
 }: Props) {
   const router = useRouter();
   const cardInputRef = useRef<HTMLInputElement>(null);
@@ -61,6 +64,11 @@ export default function ProfileRegisterForm({
   >("idle");
   const [error, setError] = useState("");
   const [scanNotice, setScanNotice] = useState<"success" | "error" | null>(null);
+  const [scanUsed, setScanUsed] = useState(businessCardScanUsed);
+  const [showCompanyPhone, setShowCompanyPhone] = useState(false);
+  const [showCompanyAddress, setShowCompanyAddress] = useState(false);
+  const [showPersonPhone, setShowPersonPhone] = useState(false);
+  const [review, setReview] = useState(false);
 
   function updateField(name: keyof typeof fields, value: string) {
     setFields((current) => ({ ...current, [name]: value }));
@@ -123,7 +131,7 @@ export default function ProfileRegisterForm({
   }
 
   async function scanBusinessCard(file: File) {
-    if (!businessCardScanEnabled) return;
+    if (!businessCardScanEnabled || scanUsed) return;
 
     setScanNotice(null);
 
@@ -179,6 +187,7 @@ export default function ProfileRegisterForm({
         }
       }
 
+      setScanUsed(true);
       setScanNotice("success");
       setStatus("idle");
     } catch {
@@ -215,6 +224,11 @@ export default function ProfileRegisterForm({
       return;
     }
 
+    if (!review) {
+      setReview(true);
+      return;
+    }
+
     try {
       setStatus("uploading");
       const blob = await upload(
@@ -240,6 +254,7 @@ export default function ProfileRegisterForm({
                 department: fields.department,
                 position: fields.position,
                 phone: fields.personPhone,
+                showPhone: showPersonPhone,
                 responsibility: fields.responsibility,
                 profile: fields.personProfile,
               },
@@ -248,6 +263,8 @@ export default function ProfileRegisterForm({
               company: {
                 name: fields.companyName,
                 phone: fields.companyPhone,
+                showPhone: showCompanyPhone,
+                showAddress: showCompanyAddress,
                 postalCode: fields.postalCode,
                 address: fields.address,
                 websiteUrl: fields.websiteUrl,
@@ -293,6 +310,7 @@ export default function ProfileRegisterForm({
 
   return (
     <form onSubmit={handleSubmit} className="mt-5 space-y-5">
+      <div hidden={review} className="space-y-5">
       <section className="rounded-[28px] border border-[#e1eef4] bg-white p-4 shadow-[0_10px_28px_rgba(50,99,121,0.07)] sm:p-6">
         <p className="text-sm font-extrabold text-[#3d5663]">登録方法</p>
         <div className="mt-3 grid grid-cols-2 gap-2">
@@ -355,21 +373,23 @@ export default function ProfileRegisterForm({
               />
               <button
                 type="button"
-                disabled={!businessCardScanEnabled || status === "scanning"}
+                disabled={!businessCardScanEnabled || scanUsed || status === "scanning"}
                 onClick={() => cardInputRef.current?.click()}
                 title={
-                  businessCardScanEnabled
+                  scanUsed
+                    ? "このブラウザでは解析が1回成功したため再利用できません"
+                    : businessCardScanEnabled
                     ? "名刺画像をAIで解析して入力します"
                     : "GEMINI_API_KEYが設定されていないため利用できません"
                 }
                 className={`inline-flex min-h-10 items-center gap-2 rounded-2xl border px-3.5 py-2 text-xs font-extrabold transition ${
-                  businessCardScanEnabled
+                  businessCardScanEnabled && !scanUsed
                     ? "border-[#cde7f2] bg-[#f1faff] text-[#278fb9]"
                     : "cursor-not-allowed border-[#e2e7e9] bg-[#f1f3f4] text-[#a2adb2]"
                 } disabled:opacity-70`}
               >
                 <Icon name="sparkles" className="h-4 w-4" />
-                {status === "scanning" ? "名刺を解析中..." : "名刺から入力"}
+                {status === "scanning" ? "名刺を解析中..." : scanUsed ? "名刺解析は利用済み" : "名刺から入力"}
               </button>
             </div>
           </div>
@@ -378,9 +398,24 @@ export default function ProfileRegisterForm({
             名刺画像は入力補助のためAI解析へ送信され、CrossoverのBlobやDBには保存しません。解析結果は登録前に確認できます。
           </p>
 
+          {status === "scanning" ? (
+            <div role="status" aria-live="polite" className="mt-3 flex items-center gap-3 rounded-2xl border border-[#cfe7f2] bg-[#effaff] px-4 py-4">
+              <span className="h-5 w-5 shrink-0 animate-spin rounded-full border-[3px] border-[#b7e5f6] border-t-[#279fd1]" />
+              <span className="text-xs font-bold leading-6 text-[#42768c]">
+                AIが名刺を解析しています。混雑時は時間がかかる場合があります。しばらくお待ちください。
+              </span>
+            </div>
+          ) : null}
+
           {!businessCardScanEnabled ? (
             <p className="mt-3 rounded-2xl border border-[#e2e7e9] bg-[#f4f5f6] px-4 py-3 text-xs font-bold text-[#87949a]">
               名刺解析は現在利用できません。
+            </p>
+          ) : null}
+
+          {scanUsed && scanNotice !== "success" && businessCardScanEnabled ? (
+            <p className="mt-3 rounded-2xl bg-[#f3f5f6] px-4 py-3 text-xs font-bold text-[#71838c]">
+              名刺解析はこのブラウザで利用済みです。入力内容は手動で修正できます。
             </p>
           ) : null}
 
@@ -467,6 +502,10 @@ export default function ProfileRegisterForm({
               <label className={labelClass}>
                 電話番号
                 <input value={fields.companyPhone} onChange={(e) => updateField("companyPhone", e.target.value)} type="tel" maxLength={25} pattern="[0-9+() -]{8,25}" className={inputClass} placeholder="0568-00-0000" />
+                <span className="mt-2 flex items-center gap-2 text-xs font-bold text-[#607783]">
+                  <input type="checkbox" checked={showCompanyPhone} onChange={(e) => setShowCompanyPhone(e.target.checked)} />
+                  この企業電話番号を公開する
+                </span>
               </label>
               <label className={labelClass}>
                 郵便番号
@@ -477,6 +516,10 @@ export default function ProfileRegisterForm({
             <label className={labelClass}>
               住所
               <input value={fields.address} onChange={(e) => updateField("address", e.target.value)} maxLength={MAX_TEXT} className={inputClass} placeholder="愛知県犬山市..." />
+              <span className="mt-2 flex items-center gap-2 text-xs font-bold text-[#607783]">
+                <input type="checkbox" checked={showCompanyAddress} onChange={(e) => setShowCompanyAddress(e.target.checked)} />
+                この会社住所を公開する
+              </span>
             </label>
 
             <label className={labelClass}>
@@ -617,6 +660,10 @@ export default function ProfileRegisterForm({
             <label className={labelClass}>
               電話番号
               <input value={fields.personPhone} onChange={(e) => updateField("personPhone", e.target.value)} type="tel" maxLength={25} pattern="[0-9+() -]{8,25}" className={inputClass} placeholder="090-0000-0000" />
+              <span className="mt-2 flex items-center gap-2 text-xs font-bold text-[#607783]">
+                <input type="checkbox" checked={showPersonPhone} onChange={(e) => setShowPersonPhone(e.target.checked)} />
+                この担当者電話番号を公開する
+              </span>
             </label>
             <label className={labelClass}>
               メールアドレス
@@ -637,6 +684,45 @@ export default function ProfileRegisterForm({
         </div>
       </section>
 
+      </div>
+
+      {review ? (
+        <div className="space-y-5">
+          <p className="rounded-2xl bg-[#e9f8ff] px-4 py-4 text-sm font-extrabold leading-6 text-[#357d99]">
+            外部に表示される情報を確認してください。電話番号・住所は公開設定がONの場合のみ表示されます。
+          </p>
+          <PublicProfilePreview
+            company={{
+              name: mode === "new" ? fields.companyName : selectedCompany?.name ?? "",
+              industries: mode === "new"
+                ? industryOptions.filter((industry) => industryIds.includes(industry.id)).map((industry) => industry.name)
+                : selectedCompany?.industries.map((industry) => industry.name) ?? [],
+              businessDescription: mode === "new" ? fields.businessDescription : selectedCompany?.businessDescription ?? "",
+              profile: mode === "new" ? fields.companyProfile : "",
+              phone: mode === "new" ? fields.companyPhone : "",
+              showPhone: mode === "new" && showCompanyPhone,
+              postalCode: mode === "new" ? fields.postalCode : "",
+              address: mode === "new" ? fields.address : "",
+              showAddress: mode === "new" && showCompanyAddress,
+              websiteUrl: mode === "new" ? fields.websiteUrl : "",
+            }}
+            person={{
+              name: fields.personName,
+              department: fields.department,
+              position: fields.position,
+              responsibility: fields.responsibility,
+              profile: fields.personProfile,
+              phone: fields.personPhone,
+              showPhone: showPersonPhone,
+            }}
+            photo={photo}
+          />
+          <button type="button" onClick={() => { setReview(false); setError(""); }} className="w-full rounded-2xl border border-[#cfe2ea] bg-white px-5 py-3 text-sm font-extrabold text-[#46788d]">
+            入力画面に戻って修正する
+          </button>
+        </div>
+      ) : null}
+
       {error ? (
         <p className="rounded-[20px] border border-[#ffd7d7] bg-[#fff4f4] px-4 py-3.5 text-sm font-bold text-[#b94e4e]">
           {error}
@@ -652,7 +738,7 @@ export default function ProfileRegisterForm({
           ? "顔写真をアップロード中..."
           : status === "saving"
             ? "プロフィールを登録中..."
-            : "この内容で登録する"}
+            : review ? "確認して登録する" : "プレビューで確認する"}
       </button>
     </form>
   );
