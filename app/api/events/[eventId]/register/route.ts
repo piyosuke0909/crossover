@@ -91,7 +91,10 @@ export async function POST(
 
   const person = validation.data.person;
 
-  const result = await prisma.$transaction(async (tx) => {
+  let result: { companyId: string; personId: string };
+
+  try {
+    result = await prisma.$transaction(async (tx) => {
     let resolvedCompanyId = companyId;
 
     if (validation.data.mode === "new") {
@@ -162,7 +165,24 @@ export async function POST(
       companyId: resolvedCompanyId,
       personId: createdPerson.id,
     };
-  });
+    });
+  } catch (error) {
+    const code =
+      error && typeof error === "object" && "code" in error
+        ? String(error.code)
+        : "UNKNOWN";
+    console.error("Participant registration failed", { code });
+    if (code === "P2022") {
+      return NextResponse.json(
+        { error: "データベースの更新が未適用です。管理者が npm run db:deploy を実行してください。" },
+        { status: 503 },
+      );
+    }
+    return NextResponse.json(
+      { error: "登録処理でエラーが発生しました。サーバーログを確認してください。" },
+      { status: 500 },
+    );
+  }
 
   const response = NextResponse.json(result, { status: 201 });
   response.cookies.set(participantCookieName(eventId), rawToken, {
