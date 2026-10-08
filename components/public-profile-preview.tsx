@@ -30,11 +30,17 @@ export default function PublicProfilePreview({
   person,
   photo,
   existingPhotoUrl,
+  onCompanyPhoneVisibilityChange,
+  onCompanyAddressVisibilityChange,
+  onPersonPhoneVisibilityChange,
 }: {
   company: PublicCompany;
   person: PublicPerson;
   photo?: File | null;
   existingPhotoUrl?: string;
+  onCompanyPhoneVisibilityChange?: (visible: boolean) => void;
+  onCompanyAddressVisibilityChange?: (visible: boolean) => void;
+  onPersonPhoneVisibilityChange?: (visible: boolean) => void;
 }) {
   const [previewPhoto, setPreviewPhoto] = useState("");
 
@@ -55,6 +61,52 @@ export default function PublicProfilePreview({
 
   return (
     <section aria-label="公開プロフィールのプレビュー" className="space-y-5">
+      {(onCompanyPhoneVisibilityChange ||
+        onCompanyAddressVisibilityChange ||
+        onPersonPhoneVisibilityChange) ? (
+        <div className="rounded-[28px] border border-[#cfe3ed] bg-[#f0faff] p-5 sm:p-6">
+          <h2 className="text-base font-extrabold text-[#27556b]">この情報を公開しますか？</h2>
+          <p className="mt-2 text-xs leading-6 text-[#648292]">
+            ここでON/OFFを変更すると、下のプレビューにすぐ反映されます。
+            初期値は非公開です。会社の公開設定は同じ会社の担当者に共通で適用されます。
+          </p>
+          <div className="mt-4 space-y-3">
+            {onCompanyPhoneVisibilityChange ? (
+              <label className="flex cursor-pointer items-center justify-between gap-4 rounded-2xl bg-white px-4 py-3">
+                <span className="min-w-0 text-sm font-bold text-[#365464]">企業の電話番号を表示する</span>
+                <input
+                  type="checkbox"
+                  checked={company.showPhone}
+                  onChange={(e) => onCompanyPhoneVisibilityChange(e.target.checked)}
+                  className="h-5 w-5 shrink-0 accent-[#4db7e5]"
+                />
+              </label>
+            ) : null}
+            {onCompanyAddressVisibilityChange ? (
+              <label className="flex cursor-pointer items-center justify-between gap-4 rounded-2xl bg-white px-4 py-3">
+                <span className="min-w-0 text-sm font-bold text-[#365464]">会社住所を表示する</span>
+                <input
+                  type="checkbox"
+                  checked={company.showAddress}
+                  onChange={(e) => onCompanyAddressVisibilityChange(e.target.checked)}
+                  className="h-5 w-5 shrink-0 accent-[#4db7e5]"
+                />
+              </label>
+            ) : null}
+            {onPersonPhoneVisibilityChange ? (
+              <label className="flex cursor-pointer items-center justify-between gap-4 rounded-2xl bg-white px-4 py-3">
+                <span className="min-w-0 text-sm font-bold text-[#365464]">担当者の電話番号を表示する</span>
+                <input
+                  type="checkbox"
+                  checked={person.showPhone}
+                  onChange={(e) => onPersonPhoneVisibilityChange(e.target.checked)}
+                  className="h-5 w-5 shrink-0 accent-[#4db7e5]"
+                />
+              </label>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
       <div className="rounded-[28px] border border-[#d8eaf1] bg-white p-5 shadow-sm sm:p-7">
         <p className="text-xs font-extrabold tracking-widest text-[#42a2ca]">
           PUBLIC PREVIEW
