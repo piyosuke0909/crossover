@@ -1,4 +1,6 @@
 import { notFound } from "next/navigation";
+import { cookies } from "next/headers";
+import { BUSINESS_CARD_SCAN_COOKIE, isScanUsedCookie } from "@/lib/business-card-usage";
 import prisma from "@/lib/prisma";
 import ProfileRegisterForm from "@/components/profile-register-form";
 import AppShell from "@/components/app-shell";
@@ -22,6 +24,13 @@ export default async function RegisterPage({
 
   if (!event || !event.isActive) notFound();
 
+  const cookieStore = await cookies();
+  const scanSecret = process.env.PARTICIPANT_AUTH_SECRET || "";
+  const businessCardScanUsed = isScanUsedCookie(
+    cookieStore.get(BUSINESS_CARD_SCAN_COOKIE)?.value,
+    scanSecret,
+  );
+
   return (
     <AppShell eventId={event.id}>
       <main className="mx-auto w-full max-w-3xl px-4 pb-32 pt-5 sm:px-6 sm:pt-8">
@@ -41,7 +50,8 @@ export default async function RegisterPage({
 
         <ProfileRegisterForm
           eventId={event.id}
-          businessCardScanEnabled={Boolean(process.env.GEMINI_API_KEY?.trim())}
+          businessCardScanEnabled={Boolean(process.env.GEMINI_API_KEY?.trim() && scanSecret)}
+          businessCardScanUsed={businessCardScanUsed}
           industries={industries.map((industry) => ({
             id: industry.id,
             name: industry.name,
