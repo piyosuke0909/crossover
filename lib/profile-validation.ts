@@ -166,9 +166,6 @@ export function validateRegistrationBody(body: ProfileBody) {
   const companyAccessCode = text(body.companyAccessCode);
 
   if (companyId) {
-    if (!companyAccessCode) {
-      return { ok: false as const, error: "企業参加コードを入力してください。" };
-    }
     return {
       ok: true as const,
       data: {
