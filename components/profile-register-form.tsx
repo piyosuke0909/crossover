@@ -12,6 +12,13 @@ type CompanyResult = {
   name: string;
   businessDescription: string;
   industries: Industry[];
+  phone?: string;
+  showPhone?: boolean;
+  postalCode?: string;
+  address?: string;
+  showAddress?: boolean;
+  websiteUrl?: string;
+  profile?: string;
 };
 type Props = {
   eventId: string;
@@ -279,6 +286,7 @@ export default function ProfileRegisterForm({
                 department: fields.department,
                 position: fields.position,
                 phone: fields.personPhone,
+                showPhone: showPersonPhone,
                 responsibility: fields.responsibility,
                 profile: fields.personProfile,
               },
@@ -698,13 +706,13 @@ export default function ProfileRegisterForm({
                 ? industryOptions.filter((industry) => industryIds.includes(industry.id)).map((industry) => industry.name)
                 : selectedCompany?.industries.map((industry) => industry.name) ?? [],
               businessDescription: mode === "new" ? fields.businessDescription : selectedCompany?.businessDescription ?? "",
-              profile: mode === "new" ? fields.companyProfile : "",
-              phone: mode === "new" ? fields.companyPhone : "",
-              showPhone: mode === "new" && showCompanyPhone,
-              postalCode: mode === "new" ? fields.postalCode : "",
-              address: mode === "new" ? fields.address : "",
-              showAddress: mode === "new" && showCompanyAddress,
-              websiteUrl: mode === "new" ? fields.websiteUrl : "",
+              profile: mode === "new" ? fields.companyProfile : selectedCompany?.profile ?? "",
+              phone: mode === "new" ? fields.companyPhone : selectedCompany?.phone ?? "",
+              showPhone: mode === "new" ? showCompanyPhone : Boolean(selectedCompany?.showPhone),
+              postalCode: mode === "new" ? fields.postalCode : selectedCompany?.postalCode ?? "",
+              address: mode === "new" ? fields.address : selectedCompany?.address ?? "",
+              showAddress: mode === "new" ? showCompanyAddress : Boolean(selectedCompany?.showAddress),
+              websiteUrl: mode === "new" ? fields.websiteUrl : selectedCompany?.websiteUrl ?? "",
             }}
             person={{
               name: fields.personName,
