@@ -43,6 +43,7 @@ export default async function EditPersonPage({
               department: person.department ?? "",
               position: person.position ?? "",
               phone: person.phone ?? "",
+              showPhone: person.showPhone,
               responsibility: person.responsibility ?? "",
               profile: person.profile ?? "",
             }}
