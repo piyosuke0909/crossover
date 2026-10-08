@@ -246,6 +246,15 @@ export default function ProfileEditForm({ eventId, industries, initial }: Props)
             person={person}
             photo={photo}
             existingPhotoUrl={person.photoUrl}
+            onCompanyPhoneVisibilityChange={(visible) =>
+              setCompany((current) => ({ ...current, showPhone: visible }))
+            }
+            onCompanyAddressVisibilityChange={(visible) =>
+              setCompany((current) => ({ ...current, showAddress: visible }))
+            }
+            onPersonPhoneVisibilityChange={(visible) =>
+              setPerson((current) => ({ ...current, showPhone: visible }))
+            }
           />
           <button type="button" onClick={() => { setReview(false); setError(""); }} className="w-full rounded-2xl border border-[#d9eaf2] bg-white px-4 py-3 text-sm font-extrabold text-[#3f7f99]">
             入力画面に戻って修正する
