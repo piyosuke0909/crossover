@@ -8,6 +8,8 @@ type CompanyValue = {
   id: string;
   name: string;
   phone: string;
+  showPhone: boolean;
+  showAddress: boolean;
   postalCode: string;
   address: string;
   websiteUrl: string;
@@ -95,6 +97,10 @@ export default function AdminCompanyForm({
       <div className="grid gap-5 sm:grid-cols-2">
         <label className="block text-sm font-extrabold">電話番号
           <input type="tel" maxLength={25} pattern="[0-9+() -]{8,25}" value={value.phone} onChange={(e) => setValue({ ...value, phone: e.target.value })} className={inputClass} />
+          <span className="mt-2 flex items-center gap-2 text-xs font-semibold text-[#607783]">
+            <input type="checkbox" checked={value.showPhone} onChange={(e) => setValue({ ...value, showPhone: e.target.checked })} />
+            企業電話番号を公開する
+          </span>
         </label>
         <label className="block text-sm font-extrabold">郵便番号
           <input maxLength={8} pattern="\d{3}-?\d{4}" value={value.postalCode} onChange={(e) => setValue({ ...value, postalCode: e.target.value })} className={inputClass} />
@@ -103,6 +109,10 @@ export default function AdminCompanyForm({
 
       <label className="block text-sm font-extrabold">住所
         <input maxLength={200} value={value.address} onChange={(e) => setValue({ ...value, address: e.target.value })} className={inputClass} />
+        <span className="mt-2 flex items-center gap-2 text-xs font-semibold text-[#607783]">
+          <input type="checkbox" checked={value.showAddress} onChange={(e) => setValue({ ...value, showAddress: e.target.checked })} />
+          会社住所を公開する
+        </span>
       </label>
       <label className="block text-sm font-extrabold">Webサイト
         <input type="url" maxLength={200} value={value.websiteUrl} onChange={(e) => setValue({ ...value, websiteUrl: e.target.value })} className={inputClass} />
