@@ -724,6 +724,9 @@ export default function ProfileRegisterForm({
               showPhone: showPersonPhone,
             }}
             photo={photo}
+            onCompanyPhoneVisibilityChange={mode === "new" ? setShowCompanyPhone : undefined}
+            onCompanyAddressVisibilityChange={mode === "new" ? setShowCompanyAddress : undefined}
+            onPersonPhoneVisibilityChange={setShowPersonPhone}
           />
           <button type="button" onClick={() => { setReview(false); setError(""); }} className="w-full rounded-2xl border border-[#cfe2ea] bg-white px-5 py-3 text-sm font-extrabold text-[#46788d]">
             入力画面に戻って修正する
