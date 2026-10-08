@@ -208,6 +208,9 @@ export default async function CompaniesPage({
                               .filter(Boolean)
                               .join(" / ") || "所属情報なし"}
                           </span>
+                          {person.companyVerifiedAt ? (
+                            <span className="mt-1 inline-flex"><CompanyVerifiedBadge compact /></span>
+                          ) : null}
                         </Link>
                         <MetPersonStarButton
                           eventId={event.id}
