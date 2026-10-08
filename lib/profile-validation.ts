@@ -12,7 +12,6 @@ type ProfileBody = {
     name?: unknown;
     phone?: unknown;
     showPhone?: unknown;
-    showPhone?: unknown;
     showAddress?: unknown;
     postalCode?: unknown;
     address?: unknown;
@@ -28,6 +27,7 @@ type ProfileBody = {
     department?: unknown;
     position?: unknown;
     phone?: unknown;
+    showPhone?: unknown;
     responsibility?: unknown;
     profile?: unknown;
   };
