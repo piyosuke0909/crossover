@@ -227,8 +227,8 @@ export default function ProfileRegisterForm({
       setError("業界を1つ以上選択してください。");
       return;
     }
-    if (mode === "existing" && (!selectedCompany || !companyAccessCode.trim())) {
-      setError("登録済み企業と企業参加コードを入力してください。");
+    if (mode === "existing" && !selectedCompany) {
+      setError("所属する企業を選択してください。");
       return;
     }
 
@@ -594,16 +594,16 @@ export default function ProfileRegisterForm({
 
           {selectedCompany ? (
             <label className={`mt-5 block ${labelClass}`}>
-              企業参加コード <span className="text-[#e56c6c]">*</span>
+              企業参加コード（任意・認証バッジ用）
               <input
                 value={companyAccessCode}
                 onChange={(e) => setCompanyAccessCode(e.target.value.toUpperCase())}
                 maxLength={20}
                 className={inputClass}
-                placeholder="会社の代表者から共有されたコード"
+                placeholder="後からでも入力できます"
               />
               <span className="mt-2 block text-xs font-medium leading-5 text-[#80939d]">
-                {selectedCompany.name} の登録者から共有されたコードを入力してください。
+                コードなしでも登録できます。正しいコードを入力すると認証済みバッジが付きます。登録後に「自分」ページから入力することもできます。
               </span>
             </label>
           ) : null}
