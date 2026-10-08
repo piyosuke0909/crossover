@@ -3,6 +3,7 @@ import prisma from "@/lib/prisma";
 import AppShell from "@/components/app-shell";
 import BackLink from "@/components/back-link";
 import { Icon } from "@/components/icons";
+import CompanyVerifiedBadge from "@/components/company-verified-badge";
 
 export const dynamic = "force-dynamic";
 
@@ -193,6 +194,9 @@ export default async function CompanyDetailPage({
                   <h3 className="break-words text-lg font-extrabold">
                     {person.name}
                   </h3>
+                  {person.companyVerifiedAt ? (
+                    <div className="mt-2"><CompanyVerifiedBadge compact /></div>
+                  ) : null
                   <p className="mt-1 break-words text-xs font-semibold text-[#7d919b]">
                     {[person.department, person.position]
                       .filter(Boolean)
