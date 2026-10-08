@@ -338,7 +338,6 @@ companyName, personName, department, position, companyPhone, personPhone, email,
     console.error("Gemini business card JSON parse failed", {
       model: usedModel,
       error: error instanceof Error ? error.message : String(error),
-      responsePreview: raw.slice(0, 500),
     });
 
     return NextResponse.json(
