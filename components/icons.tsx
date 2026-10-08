@@ -22,6 +22,7 @@ export type IconName =
   | "pencil"
   | "trash"
   | "eye"
+  | "check-circle"
   | "eye-off"
   | "plus"
   | "person"
@@ -52,6 +53,7 @@ const MATERIAL_ICON: Record<IconName, string> = {
   pencil: "edit",
   trash: "delete",
   eye: "visibility",
+  "check-circle": "verified",
   "eye-off": "visibility_off",
   plus: "add",
   person: "account_circle",
