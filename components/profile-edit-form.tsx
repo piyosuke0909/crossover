@@ -4,6 +4,7 @@ import { FormEvent, useState } from "react";
 import { upload } from "@vercel/blob/client";
 import { useRouter } from "next/navigation";
 import PublicProfilePreview from "@/components/public-profile-preview";
+import { readApiJson } from "@/lib/response-json";
 
 type Industry = { id: string; name: string };
 type Props = {
@@ -97,9 +98,7 @@ export default function ProfileEditForm({ eventId, industries, initial }: Props)
           person: { ...person, photoUrl },
         }),
       });
-      const data = (await response.json()) as { error?: string };
-
-      if (!response.ok) throw new Error(data.error || "保存に失敗しました。");
+      await readApiJson<{ success: boolean }>(response, "保存に失敗しました。");
 
       router.push(`/events/${eventId}/me`);
       router.refresh();
