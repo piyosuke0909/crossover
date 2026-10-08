@@ -5,6 +5,7 @@ import { upload } from "@vercel/blob/client";
 import { useRouter } from "next/navigation";
 import { Icon } from "@/components/icons";
 import PublicProfilePreview from "@/components/public-profile-preview";
+import { readApiJson } from "@/lib/response-json";
 
 type Industry = { id: string; name: string };
 type CompanyResult = {
@@ -297,10 +298,12 @@ export default function ProfileRegisterForm({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-      const data = (await response.json()) as { personId?: string; error?: string };
-
-      if (!response.ok || !data.personId) {
-        throw new Error(data.error || "登録に失敗しました。");
+      const data = await readApiJson<{ personId?: string }>(
+        response,
+        "登録に失敗しました。",
+      );
+      if (!data.personId) {
+        throw new Error("登録結果を取得できませんでした。もう一度お試しください。");
       }
 
       router.push(`/events/${eventId}/me`);
