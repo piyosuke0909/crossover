@@ -75,7 +75,7 @@ export default async function CompanyDetailPage({
               </p>
 
               <div className="mt-5 flex flex-wrap gap-2.5">
-                {company.phone ? (
+                {company.showPhone && company.phone ? (
                   <a
                     href={`tel:${company.phone}`}
                     className="inline-flex min-h-11 items-center gap-2 rounded-2xl border border-[#d7eaf2] bg-white px-4 py-3 text-sm font-extrabold text-[#3e6d82] shadow-sm"
@@ -142,7 +142,7 @@ export default async function CompanyDetailPage({
                   <dd className="mt-1.5 break-all font-bold">{company.phone}</dd>
                 </div>
               ) : null}
-              {company.address ? (
+              {company.showAddress && company.address ? (
                 <div className="mt-4 border-t border-[#e7f0f4] pt-4">
                   <dt className="text-xs font-bold text-[#8497a1]">住所</dt>
                   <dd className="mt-1.5 break-words font-bold leading-6">
@@ -211,7 +211,7 @@ export default async function CompanyDetailPage({
                     </p>
                   ) : null}
 
-                  {person.phone ? (
+                  {person.showPhone && person.phone ? (
                     <a
                       href={`tel:${person.phone}`}
                       className="mt-4 inline-flex max-w-full items-center gap-2 break-all text-sm font-extrabold text-[#299fce]"
