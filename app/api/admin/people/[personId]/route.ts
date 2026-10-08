@@ -55,6 +55,7 @@ export async function PATCH(
       department: person.department,
       position: person.position,
       phone: person.phone,
+      showPhone: person.showPhone,
       responsibility: person.responsibility,
       profile: person.profile,
     },
