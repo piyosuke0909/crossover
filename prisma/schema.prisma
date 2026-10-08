@@ -42,6 +42,7 @@ model Person {
   photoUrl              String
   email                 String?
   emailVerifiedAt       DateTime?
+  companyVerifiedAt     DateTime?
   emailOtpEnabled       Boolean                 @default(false)
   department            String?
   position              String?
