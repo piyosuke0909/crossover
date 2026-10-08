@@ -9,6 +9,7 @@ import { readApiJson } from "@/lib/response-json";
 type Industry = { id: string; name: string };
 type Props = {
   eventId: string;
+  canEditCompany: boolean;
   industries: Industry[];
   initial: {
     company: {
@@ -41,7 +42,7 @@ const MAX_TEXT = 200;
 const MAX_PHOTO_BYTES = 5 * 1024 * 1024;
 const ALLOWED_PHOTO_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 
-export default function ProfileEditForm({ eventId, industries, initial }: Props) {
+export default function ProfileEditForm({ eventId, canEditCompany, industries, initial }: Props) {
   const router = useRouter();
   const [company, setCompany] = useState(initial.company);
   const [person, setPerson] = useState(initial.person);
@@ -59,7 +60,7 @@ export default function ProfileEditForm({ eventId, industries, initial }: Props)
     e.preventDefault();
     setError("");
 
-    if (industryIds.length === 0) {
+    if (canEditCompany && industryIds.length === 0) {
       setError("業界を1つ以上選択してください。");
       return;
     }
@@ -114,10 +115,13 @@ export default function ProfileEditForm({ eventId, industries, initial }: Props)
       <section className="rounded-[28px] border border-[#e1eef4] bg-white p-5 sm:p-7">
         <h2 className="font-extrabold">会社情報</h2>
         <p className="mt-1 text-xs leading-5 text-[#80939d]">
-          会社情報の変更は、同じ会社に紐づく他の担当者にも反映されます。
+          {canEditCompany
+            ? "会社情報の変更は、同じ会社に紐づく他の担当者にも反映されます。"
+            : "企業参加コードによる認証が必要です。認証前は自分の担当者情報だけ編集できます。"}
         </p>
 
-        <div className="mt-5 grid gap-5">
+        <fieldset disabled={!canEditCompany} className="mt-5 disabled:opacity-65">
+        <div className="grid gap-5">
           <label className={labelClass}>企業名 *
             <input required maxLength={MAX_TEXT} value={company.name} onChange={(e) => setCompany({ ...company, name: e.target.value })} className={inputClass} />
           </label>
@@ -182,6 +186,7 @@ export default function ProfileEditForm({ eventId, industries, initial }: Props)
             <input type="url" maxLength={MAX_TEXT} value={company.websiteUrl} onChange={(e) => setCompany({ ...company, websiteUrl: e.target.value })} className={inputClass} />
           </label>
         </div>
+        </fieldset>
       </section>
 
       <section className="rounded-[28px] border border-[#eee7c8] bg-[#fffdf3] p-5 sm:p-7">
@@ -245,12 +250,12 @@ export default function ProfileEditForm({ eventId, industries, initial }: Props)
             person={person}
             photo={photo}
             existingPhotoUrl={person.photoUrl}
-            onCompanyPhoneVisibilityChange={(visible) =>
+            onCompanyPhoneVisibilityChange={canEditCompany ? (visible) =>
               setCompany((current) => ({ ...current, showPhone: visible }))
-            }
-            onCompanyAddressVisibilityChange={(visible) =>
+            : undefined}
+            onCompanyAddressVisibilityChange={canEditCompany ? (visible) =>
               setCompany((current) => ({ ...current, showAddress: visible }))
-            }
+            : undefined}
             onPersonPhoneVisibilityChange={(visible) =>
               setPerson((current) => ({ ...current, showPhone: visible }))
             }
