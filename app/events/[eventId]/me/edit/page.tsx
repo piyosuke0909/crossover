@@ -47,6 +47,8 @@ export default async function EditMyProfilePage({
             company: {
               name: company.name,
               phone: company.phone ?? "",
+              showPhone: company.showPhone,
+              showAddress: company.showAddress,
               postalCode: company.postalCode ?? "",
               address: company.address ?? "",
               websiteUrl: company.websiteUrl ?? "",
@@ -61,6 +63,7 @@ export default async function EditMyProfilePage({
               department: person.department ?? "",
               position: person.position ?? "",
               phone: person.phone ?? "",
+              showPhone: person.showPhone,
               responsibility: person.responsibility ?? "",
               profile: person.profile ?? "",
             },
