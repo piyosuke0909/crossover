@@ -1,5 +1,6 @@
 import Link from "next/link";
 import AppShell from "@/components/app-shell";
+import CompanyVerifiedBadge from "@/components/company-verified-badge";
 import { Icon } from "@/components/icons";
 import { getCurrentParticipant } from "@/lib/participant-session";
 import prisma from "@/lib/prisma";
@@ -91,6 +92,9 @@ export default async function MetPeoplePage({
                   <h2 className="truncate font-extrabold">
                     {metPerson.name}
                   </h2>
+                  {metPerson.companyVerifiedAt ? (
+                    <div className="mt-2 inline-flex"><CompanyVerifiedBadge compact /></div>
+                  ) : null}
                   <p className="mt-1 truncate text-sm font-bold text-[#607783]">
                     {metPerson.company.name}
                   </p>
