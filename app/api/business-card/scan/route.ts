@@ -1,4 +1,11 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
+import {
+  BUSINESS_CARD_SCAN_COOKIE,
+  BUSINESS_CARD_SCAN_MAX_AGE,
+  createScanUsedCookie,
+  isScanUsedCookie,
+} from "@/lib/business-card-usage";
 
 const ALLOWED_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 const MAX_BYTES = 5 * 1024 * 1024;
@@ -140,10 +147,19 @@ async function parseGeminiFailure(
 
 export async function POST(request: Request) {
   const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
+  const scanSecret = process.env.PARTICIPANT_AUTH_SECRET;
+  if (!apiKey || !scanSecret) {
     return NextResponse.json(
-      { error: "名刺スキャン用のGEMINI_API_KEYが設定されていません。" },
+      { error: "名刺スキャンのAPIキーまたは認証設定がありません。" },
       { status: 503 },
+    );
+  }
+
+  const cookieStore = await cookies();
+  if (isScanUsedCookie(cookieStore.get(BUSINESS_CARD_SCAN_COOKIE)?.value, scanSecret)) {
+    return NextResponse.json(
+      { error: "名刺解析はこのブラウザですでに1回成功しています。以降は手入力で修正してください。", code: "SCAN_ALREADY_USED" },
+      { status: 409 },
     );
   }
 
@@ -286,7 +302,11 @@ companyName, personName, department, position, companyPhone, personPhone, email,
         ? String(parsed[key]).trim().slice(0, 200)
         : "";
 
-    return NextResponse.json({
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+      throw new Error("JSON object expected");
+    }
+
+    const extracted = {
       companyName: clean("companyName"),
       personName: clean("personName"),
       department: clean("department"),
@@ -298,7 +318,22 @@ companyName, personName, department, position, companyPhone, personPhone, email,
       address: clean("address"),
       websiteUrl: clean("websiteUrl"),
       industryHint: clean("industryHint"),
+    };
+
+    // AIが空データを返した場合は成功扱いにしない（再試行可能）。
+    if (!Object.values(extracted).some(Boolean)) {
+      throw new Error("No extracted fields");
+    }
+
+    const success = NextResponse.json(extracted);
+    success.cookies.set(BUSINESS_CARD_SCAN_COOKIE, createScanUsedCookie(scanSecret), {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: BUSINESS_CARD_SCAN_MAX_AGE,
     });
+    return success;
   } catch (error) {
     console.error("Gemini business card JSON parse failed", {
       model: usedModel,
