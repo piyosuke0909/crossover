@@ -42,9 +42,6 @@ export async function POST(request: Request): Promise<NextResponse> {
           tokenPayload: JSON.stringify({ eventId: event.id }),
         };
       },
-      onUploadCompleted: async () => {
-        // Blob URL is saved to Person.photoUrl by the registration API.
-      },
     });
 
     return NextResponse.json(response);
