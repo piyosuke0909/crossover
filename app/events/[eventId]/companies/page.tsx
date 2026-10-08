@@ -5,6 +5,7 @@ import AppShell from "@/components/app-shell";
 import BackLink from "@/components/back-link";
 import { Icon } from "@/components/icons";
 import { getCurrentParticipant } from "@/lib/participant-session";
+import { companyEventSearchConditions } from "@/lib/company-event-search";
 import MetPersonStarButton from "@/components/met-person-star-button";
 
 export const dynamic = "force-dynamic";
@@ -41,28 +42,7 @@ export default async function CompaniesPage({
           ...(industryId
             ? { industries: { some: { industryId } } }
             : {}),
-          ...(q
-            ? {
-                OR: [
-                  { name: { contains: q, mode: "insensitive" } },
-                  {
-                    businessDescription: {
-                      contains: q,
-                      mode: "insensitive",
-                    },
-                  },
-                  { profile: { contains: q, mode: "insensitive" } },
-                  {
-                    people: {
-                      some: {
-                        isHidden: false,
-                        name: { contains: q, mode: "insensitive" },
-                      },
-                    },
-                  },
-                ],
-              }
-            : {}),
+          ...(q ? companyEventSearchConditions(q, eventId) : {}),
         },
       },
       include: {
