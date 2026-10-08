@@ -11,6 +11,9 @@ type ProfileBody = {
   company?: {
     name?: unknown;
     phone?: unknown;
+    showPhone?: unknown;
+    showPhone?: unknown;
+    showAddress?: unknown;
     postalCode?: unknown;
     address?: unknown;
     websiteUrl?: unknown;
@@ -62,6 +65,7 @@ export function validatePersonFields(person: ProfileBody["person"], requirePhoto
   const department = optionalText(person?.department);
   const position = optionalText(person?.position);
   const phone = optionalText(person?.phone);
+  const showPhone = person?.showPhone === true;
   const responsibility = optionalText(person?.responsibility);
   const profile = optionalText(person?.profile);
 
@@ -92,13 +96,15 @@ export function validatePersonFields(person: ProfileBody["person"], requirePhoto
 
   return {
     ok: true as const,
-    data: { name, photoUrl, email, department, position, phone, responsibility, profile },
+    data: { name, photoUrl, email, department, position, phone, showPhone, responsibility, profile },
   };
 }
 
 export function validateCompanyFields(company: ProfileBody["company"]) {
   const name = text(company?.name);
   const phone = optionalText(company?.phone);
+  const showPhone = company?.showPhone === true;
+  const showAddress = company?.showAddress === true;
   const postalCode = optionalText(company?.postalCode);
   const address = optionalText(company?.address);
   const websiteUrl = optionalText(company?.websiteUrl);
@@ -148,7 +154,7 @@ export function validateCompanyFields(company: ProfileBody["company"]) {
 
   return {
     ok: true as const,
-    data: { name, phone, postalCode, address, websiteUrl, industryIds, businessDescription, profile },
+    data: { name, phone, showPhone, showAddress, postalCode, address, websiteUrl, industryIds, businessDescription, profile },
   };
 }
 
