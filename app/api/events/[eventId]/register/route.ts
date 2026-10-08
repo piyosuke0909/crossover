@@ -100,6 +100,8 @@ export async function POST(
         data: {
           name: company.name,
           phone: company.phone,
+          showPhone: company.showPhone,
+          showAddress: company.showAddress,
           postalCode: company.postalCode,
           address: company.address,
           websiteUrl: company.websiteUrl,
@@ -140,6 +142,7 @@ export async function POST(
         department: person.department,
         position: person.position,
         phone: person.phone,
+        showPhone: person.showPhone,
         responsibility: person.responsibility,
         profile: person.profile,
         eventPeople: { create: { eventId } },
