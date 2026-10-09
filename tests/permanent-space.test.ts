@@ -74,3 +74,44 @@ test("original admin dashboard layout and management actions remain intact", () 
   assert.ok(actions.includes("togglePublish"));
   assert.doesNotMatch(actions, /async function remove|onClick=\{remove\}|method: "DELETE"/);
 });
+
+test("photo upload is retired and no face photo is required for registration", () => {
+  const registration = read("components/profile-register-form.tsx");
+  const editor = read("components/profile-edit-form.tsx");
+  const validation = read("lib/profile-validation.ts");
+  assert.doesNotMatch(registration, /@vercel\/blob|type="file"|顔写真|photoUrl|setPhoto/);
+  assert.doesNotMatch(editor, /@vercel\/blob|type="file"|顔写真|photoUrl|setPhoto/);
+  assert.doesNotMatch(validation, /顔写真は必須|requirePhoto|photoUrl/);
+  assert.match(read("app/api/blob/upload/route.ts"), /status: 410/);
+  assert.match(read("app/api/events/[eventId]/register/route.ts"), /photoUrl: ""/);
+});
+
+test("all person pages use text avatars instead of persisted photos", () => {
+  const pages = [
+    "app/events/[eventId]/page.tsx",
+    "app/events/[eventId]/companies/page.tsx",
+    "app/events/[eventId]/companies/[companyId]/page.tsx",
+    "app/events/[eventId]/me/page.tsx",
+    "app/events/[eventId]/met/page.tsx",
+    "app/events/[eventId]/meet/[personId]/page.tsx",
+    "app/admin/people/page.tsx",
+    "components/public-profile-preview.tsx",
+  ];
+  for (const path of pages) {
+    const source = read(path);
+    assert.match(source, /PersonAvatar/, path);
+    assert.doesNotMatch(source, /src=\{(?:person|metPerson|participant\.person)\.photoUrl\}/, path);
+  }
+});
+
+test("admin pages share blue and yellow home styling while keeping operations", () => {
+  const dashboard = read("app/admin/page.tsx");
+  const companies = read("app/admin/companies/page.tsx");
+  const people = read("app/admin/people/page.tsx");
+  assert.match(dashboard, /bg-\[#4db7e5\]/);
+  assert.match(dashboard, /bg-\[#fff0a8\]/);
+  assert.match(dashboard, /AdminEventActions/);
+  assert.match(dashboard, /企業CSV|参加者CSV/);
+  assert.match(companies, /from-\[#4db7e5\]/);
+  assert.match(people, /from-\[#4db7e5\]/);
+});
