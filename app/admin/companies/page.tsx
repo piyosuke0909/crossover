@@ -36,26 +36,31 @@ export default async function AdminCompaniesPage({
       <div className="mx-auto max-w-6xl">
         <BackLink href="/admin">管理画面へ戻る</BackLink>
 
-        <div className="mt-5 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <p className="text-xs font-extrabold tracking-[0.16em] text-[#4aaed9]">COMPANIES</p>
-            <h1 className="mt-1 text-2xl font-extrabold">企業管理</h1>
-            <p className="mt-2 text-sm text-[#728792]">企業の検索・編集・非表示管理ができます。</p>
+        <section className="relative mt-5 overflow-hidden rounded-[30px] bg-gradient-to-br from-[#4db7e5] to-[#35a6d7] px-6 py-7 text-white shadow-[0_18px_42px_rgba(45,143,186,0.2)] sm:px-8 sm:py-9">
+          <span className="pointer-events-none absolute -right-8 -top-10 h-36 w-36 rounded-full bg-[#fff0a8]" />
+          <span className="pointer-events-none absolute -bottom-16 right-24 h-32 w-32 rounded-full border-[18px] border-white/15" />
+          <div className="relative">
+            <p className="text-xs font-extrabold tracking-[0.16em] text-white/85">COMPANIES</p>
+            <h1 className="mt-2 text-2xl font-extrabold tracking-tight sm:text-3xl">企業管理</h1>
+            <p className="mt-3 max-w-2xl break-words text-sm leading-7 text-white/95">登録企業を検索して、会社情報や公開状態を管理できます。</p>
+            <span className="mt-4 inline-flex items-center rounded-full bg-white/20 px-3 py-1.5 text-xs font-extrabold backdrop-blur">
+              表示件数：{companies.length}件
+            </span>
           </div>
+        </section>
 
-          <form className="flex w-full gap-2 sm:max-w-md">
-            <input
-              name="q"
-              defaultValue={q}
-              className="min-w-0 flex-1 rounded-2xl border border-[#d9eaf2] bg-white px-4 py-3 text-sm outline-none focus:border-[#62bde5]"
-              placeholder="企業名・事業内容で検索"
-            />
-            <button className="inline-flex items-center gap-2 rounded-2xl bg-[#4db7e5] px-4 py-3 text-sm font-extrabold text-white">
-              <Icon name="search" className="h-4 w-4" />
-              検索
-            </button>
-          </form>
-        </div>
+        <form className="mt-5 flex w-full min-w-0 gap-2 rounded-[22px] border border-[#e1eef4] bg-white p-3 shadow-[0_9px_26px_rgba(50,99,121,0.06)]">
+          <input
+            name="q"
+            defaultValue={q}
+            className="min-w-0 flex-1 rounded-2xl border border-[#d9eaf2] bg-[#f8fcfe] px-4 py-3 text-sm outline-none focus:border-[#62bde5]"
+            placeholder="企業名・事業内容で検索"
+          />
+          <button className="inline-flex shrink-0 items-center gap-2 rounded-2xl bg-[#4db7e5] px-4 py-3 text-sm font-extrabold text-white">
+            <Icon name="search" className="h-4 w-4" />
+            検索
+          </button>
+        </form>
 
         <div className="mt-6 grid gap-4">
           {companies.map((company) => (
