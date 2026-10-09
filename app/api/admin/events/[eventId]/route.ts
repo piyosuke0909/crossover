@@ -49,32 +49,6 @@ export async function PATCH(
   return NextResponse.json(event);
 }
 
-export async function DELETE(
-  _request: Request,
-  context: { params: Promise<{ eventId: string }> },
-) {
-  if (!(await isAdminApiAuthenticated())) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  const { eventId } = await context.params;
-
-  const existing = await prisma.event.findFirst({
-    where: { id: eventId, deletedAt: null },
-    select: { id: true },
-  });
-
-  if (!existing) {
-    return NextResponse.json({ error: "イベントが見つかりません。" }, { status: 404 });
-  }
-
-  await prisma.event.update({
-    where: { id: eventId },
-    data: {
-      isActive: false,
-      deletedAt: new Date(),
-    },
-  });
-
-  return NextResponse.json({ success: true });
+export async function DELETE() {
+  return NextResponse.json({ error: "常設の交流ページは削除できません。" }, { status: 405 });
 }
