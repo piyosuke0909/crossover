@@ -1,17 +1,47 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import { upload } from "@vercel/blob/client";
 import { useRouter } from "next/navigation";
+import { Icon } from "@/components/icons";
+import PublicProfilePreview from "@/components/public-profile-preview";
+import { readApiJson } from "@/lib/response-json";
 
-type Industry = {
+type Industry = { id: string; name: string };
+type CompanyResult = {
   id: string;
   name: string;
+  businessDescription?: string;
+  industries: Industry[];
+  phone?: string;
+  showPhone?: boolean;
+  postalCode?: string;
+  address?: string;
+  showAddress?: boolean;
+  websiteUrl?: string;
+  profile?: string;
 };
-
 type Props = {
   eventId: string;
   industries: Industry[];
+};
+
+const MAX_TEXT = 200;
+
+const emptyFields = {
+  companyName: "",
+  companyPhone: "",
+  postalCode: "",
+  address: "",
+  websiteUrl: "",
+  businessDescription: "",
+  companyProfile: "",
+  personName: "",
+  email: "",
+  department: "",
+  position: "",
+  personPhone: "",
+  responsibility: "",
+  personProfile: "",
 };
 
 export default function ProfileRegisterForm({
@@ -19,85 +49,159 @@ export default function ProfileRegisterForm({
   industries,
 }: Props) {
   const router = useRouter();
-  const [photo, setPhoto] = useState<File | null>(null);
+  const [mode, setMode] = useState<"new" | "existing">("new");
+  const [fields, setFields] = useState(emptyFields);
+  const [industryOptions, setIndustryOptions] = useState(industries);
+  const [industryIds, setIndustryIds] = useState<string[]>([]);
+  const [newIndustryName, setNewIndustryName] = useState("");
+  const [companyQuery, setCompanyQuery] = useState("");
+  const [companyResults, setCompanyResults] = useState<CompanyResult[]>([]);
+  const [selectedCompany, setSelectedCompany] = useState<CompanyResult | null>(null);
+  const [companyAccessCode, setCompanyAccessCode] = useState("");
   const [status, setStatus] = useState<
-    "idle" | "uploading" | "saving" | "error"
+    "idle" | "searching" | "saving" | "error"
   >("idle");
   const [error, setError] = useState("");
+  const [showCompanyPhone, setShowCompanyPhone] = useState(false);
+  const [showCompanyAddress, setShowCompanyAddress] = useState(false);
+  const [showPersonPhone, setShowPersonPhone] = useState(false);
+  const [review, setReview] = useState(false);
+
+  function updateField(name: keyof typeof fields, value: string) {
+    setFields((current) => ({ ...current, [name]: value }));
+  }
+
+  async function searchCompanies() {
+    const q = companyQuery.trim();
+    if (q.length < 2) {
+      setError("企業名を2文字以上入力してください。");
+      return;
+    }
+
+    setError("");
+    setStatus("searching");
+    try {
+      const response = await fetch(`/api/companies/search?q=${encodeURIComponent(q)}`);
+      const data = (await response.json()) as { companies?: CompanyResult[] };
+      setCompanyResults(data.companies ?? []);
+      if ((data.companies ?? []).length === 0) {
+        setError("該当する登録済み企業がありません。新規企業として登録してください。");
+      }
+      setStatus("idle");
+    } catch {
+      setStatus("error");
+      setError("企業検索に失敗しました。");
+    }
+  }
+
+  async function addIndustry() {
+    const name = newIndustryName.trim();
+    if (!name) return;
+
+    setError("");
+    try {
+      const response = await fetch("/api/industries", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name }),
+      });
+      const data = (await response.json()) as Industry & { error?: string };
+
+      if (!response.ok || !data.id) {
+        throw new Error(data.error || "業界を追加できませんでした。");
+      }
+
+      setIndustryOptions((current) =>
+        current.some((item) => item.id === data.id)
+          ? current
+          : [...current, { id: data.id, name: data.name }].sort((a, b) =>
+              a.name.localeCompare(b.name, "ja"),
+            ),
+      );
+      setIndustryIds((current) =>
+        current.includes(data.id) ? current : [...current, data.id],
+      );
+      setNewIndustryName("");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "業界を追加できませんでした。");
+    }
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
 
-    if (!photo) {
-      setError("担当者の顔写真を選択してください。");
+    if (mode === "new" && industryIds.length === 0) {
+      setError("業界を1つ以上選択してください。");
+      return;
+    }
+    if (mode === "existing" && !selectedCompany) {
+      setError("所属する企業を選択してください。");
       return;
     }
 
-    const form = new FormData(event.currentTarget);
+    if (!review) {
+      setReview(true);
+      return;
+    }
 
     try {
-      setStatus("uploading");
-
-      const blob = await upload(
-        "events/" +
-          eventId +
-          "/people/" +
-          crypto.randomUUID() +
-          "-" +
-          photo.name,
-        photo,
-        {
-          access: "public",
-          handleUploadUrl: "/api/blob/upload",
-          clientPayload: JSON.stringify({ eventId }),
-        },
-      );
-
       setStatus("saving");
+      const payload =
+        mode === "existing"
+          ? {
+              companyId: selectedCompany!.id,
+              companyAccessCode,
+              person: {
+                name: fields.personName,
+                email: fields.email,
+                department: fields.department,
+                position: fields.position,
+                phone: fields.personPhone,
+                showPhone: showPersonPhone,
+                responsibility: fields.responsibility,
+                profile: fields.personProfile,
+              },
+            }
+          : {
+              company: {
+                name: fields.companyName,
+                phone: fields.companyPhone,
+                showPhone: showCompanyPhone,
+                showAddress: showCompanyAddress,
+                postalCode: fields.postalCode,
+                address: fields.address,
+                websiteUrl: fields.websiteUrl,
+                industryIds,
+                businessDescription: fields.businessDescription,
+                profile: fields.companyProfile,
+              },
+              person: {
+                name: fields.personName,
+                email: fields.email,
+                department: fields.department,
+                position: fields.position,
+                phone: fields.personPhone,
+                showPhone: showPersonPhone,
+                responsibility: fields.responsibility,
+                profile: fields.personProfile,
+              },
+            };
 
-      const response = await fetch("/api/events/" + eventId + "/register", {
+      const response = await fetch(`/api/events/${eventId}/register`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          company: {
-            name: String(form.get("companyName") ?? ""),
-            phone: String(form.get("companyPhone") ?? ""),
-            postalCode: String(form.get("postalCode") ?? ""),
-            address: String(form.get("address") ?? ""),
-            websiteUrl: String(form.get("websiteUrl") ?? ""),
-            industryId: String(form.get("industryId") ?? ""),
-            businessDescription: String(
-              form.get("businessDescription") ?? "",
-            ),
-            profile: String(form.get("companyProfile") ?? ""),
-          },
-          person: {
-            name: String(form.get("personName") ?? ""),
-            photoUrl: blob.url,
-            department: String(form.get("department") ?? ""),
-            position: String(form.get("position") ?? ""),
-            phone: String(form.get("personPhone") ?? ""),
-            responsibility: String(form.get("responsibility") ?? ""),
-            profile: String(form.get("personProfile") ?? ""),
-          },
-        }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
       });
-
-      const data = (await response.json()) as {
-        companyId?: string;
-        error?: string;
-      };
-
-      if (!response.ok || !data.companyId) {
-        throw new Error(data.error || "登録に失敗しました。");
+      const data = await readApiJson<{ personId?: string }>(
+        response,
+        "登録に失敗しました。",
+      );
+      if (!data.personId) {
+        throw new Error("登録結果を取得できませんでした。もう一度お試しください。");
       }
 
-      router.push(
-        "/events/" + eventId + "/companies/" + data.companyId,
-      );
+      router.push(`/events/${eventId}/me`);
       router.refresh();
     } catch (e) {
       setError(e instanceof Error ? e.message : "登録に失敗しました。");
@@ -106,168 +210,346 @@ export default function ProfileRegisterForm({
   }
 
   const inputClass =
-    "mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-3 outline-none focus:border-slate-600";
+    "mt-2 w-full rounded-2xl border border-[#d9eaf2] bg-[#f9fcfe] px-4 py-3.5 text-sm font-medium text-[#173042] outline-none transition placeholder:text-[#9babb4] focus:border-[#62bde5] focus:bg-white focus:ring-4 focus:ring-[#def4fe]";
+  const labelClass = "text-sm font-extrabold text-[#3d5663]";
+  const helpClass = "mt-1 block text-right text-[11px] font-medium text-[#8a9ca5]";
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="mt-6 space-y-8 rounded-3xl bg-white p-5 shadow-sm sm:p-7"
-    >
-      <section>
-        <h2 className="text-lg font-semibold">会社情報</h2>
-        <div className="mt-4 grid gap-4">
-          <label className="text-sm font-medium">
-            企業名 <span className="text-red-600">*</span>
-            <input
-              required
-              name="companyName"
-              className={inputClass}
-              placeholder="株式会社○○"
-            />
-          </label>
-
-          <label className="text-sm font-medium">
-            業界 <span className="text-red-600">*</span>
-            <select
-              required
-              name="industryId"
-              className={inputClass}
-              defaultValue=""
-            >
-              <option value="" disabled>
-                選択してください
-              </option>
-              {industries.map((industry) => (
-                <option key={industry.id} value={industry.id}>
-                  {industry.name}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label className="text-sm font-medium">
-            事業内容 <span className="text-red-600">*</span>
-            <textarea
-              required
-              name="businessDescription"
-              className={inputClass}
-              rows={4}
-              placeholder="主な事業内容を入力してください"
-            />
-          </label>
-
-          <label className="text-sm font-medium">
-            企業プロフィール
-            <textarea
-              name="companyProfile"
-              className={inputClass}
-              rows={4}
-              placeholder="会社の特徴や交流会で話したい内容など"
-            />
-          </label>
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <label className="text-sm font-medium">
-              電話番号
-              <input name="companyPhone" className={inputClass} />
-            </label>
-            <label className="text-sm font-medium">
-              郵便番号
-              <input name="postalCode" className={inputClass} />
-            </label>
-          </div>
-
-          <label className="text-sm font-medium">
-            住所
-            <input name="address" className={inputClass} />
-          </label>
-
-          <label className="text-sm font-medium">
-            Webサイト
-            <input
-              name="websiteUrl"
-              type="url"
-              className={inputClass}
-              placeholder="https://..."
-            />
-          </label>
+    <form onSubmit={handleSubmit} className="mt-5 space-y-5">
+      <div hidden={review} className="space-y-5">
+      <section className="rounded-[28px] border border-[#e1eef4] bg-white p-4 shadow-[0_10px_28px_rgba(50,99,121,0.07)] sm:p-6">
+        <p className="text-sm font-extrabold text-[#3d5663]">登録方法</p>
+        <div className="mt-3 grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              setMode("new");
+              setSelectedCompany(null);
+              setError("");
+            }}
+            className={`rounded-2xl border px-3 py-3 text-sm font-extrabold transition ${
+              mode === "new"
+                ? "border-[#4db7e5] bg-[#e6f7ff] text-[#238fbd]"
+                : "border-[#dcebf2] bg-white text-[#6f8490]"
+            }`}
+          >
+            新しい企業
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setMode("existing");
+              setError("");
+            }}
+            className={`rounded-2xl border px-3 py-3 text-sm font-extrabold transition ${
+              mode === "existing"
+                ? "border-[#4db7e5] bg-[#e6f7ff] text-[#238fbd]"
+                : "border-[#dcebf2] bg-white text-[#6f8490]"
+            }`}
+          >
+            登録済み企業
+          </button>
         </div>
       </section>
 
-      <section>
-        <h2 className="text-lg font-semibold">担当者情報</h2>
-        <div className="mt-4 grid gap-4">
-          <label className="text-sm font-medium">
-            氏名 <span className="text-red-600">*</span>
-            <input required name="personName" className={inputClass} />
-          </label>
+      {mode === "new" ? (
+        <section className="rounded-[28px] border border-[#e1eef4] bg-white p-5 shadow-[0_10px_28px_rgba(50,99,121,0.07)] sm:p-7">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <span className="grid h-11 w-11 place-items-center rounded-[18px] bg-[#e5f7ff] text-[#249ed1]">
+                <Icon name="building" className="h-6 w-6" />
+              </span>
+              <div>
+                <p className="text-[11px] font-extrabold tracking-[0.14em] text-[#55afd4]">STEP 1</p>
+                <h2 className="font-extrabold">会社情報</h2>
+              </div>
+            </div>
 
-          <label className="text-sm font-medium">
-            顔写真 <span className="text-red-600">*</span>
-            <input
-              required
-              type="file"
-              accept="image/jpeg,image/png,image/webp"
-              className="mt-2 block w-full text-sm"
-              onChange={(event) => setPhoto(event.target.files?.[0] ?? null)}
-            />
-            <span className="mt-1 block text-xs font-normal text-slate-500">
-              JPEG / PNG / WebP、最大5MB
+          </div>
+
+          <div className="mt-6 grid gap-5">
+            <label className={labelClass}>
+              企業名 <span className="text-[#e56c6c]">*</span>
+              <input required maxLength={MAX_TEXT} value={fields.companyName} onChange={(e) => updateField("companyName", e.target.value)} className={inputClass} placeholder="株式会社○○" />
+            </label>
+
+            <fieldset>
+              <legend className={labelClass}>
+                業界 <span className="text-[#e56c6c]">*</span>
+                <span className="ml-2 text-xs font-medium text-[#8397a1]">複数選択できます</span>
+              </legend>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {industryOptions.map((industry) => {
+                  const checked = industryIds.includes(industry.id);
+                  return (
+                    <button
+                      type="button"
+                      key={industry.id}
+                      onClick={() =>
+                        setIndustryIds((current) =>
+                          checked
+                            ? current.filter((id) => id !== industry.id)
+                            : [...current, industry.id],
+                        )
+                      }
+                      className={`rounded-full border px-3.5 py-2 text-xs font-extrabold transition ${
+                        checked
+                          ? "border-[#4db7e5] bg-[#e6f7ff] text-[#238fbd]"
+                          : "border-[#d6e8ef] bg-white text-[#607783]"
+                      }`}
+                    >
+                      {industry.name}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="mt-3 flex gap-2">
+                <input
+                  value={newIndustryName}
+                  onChange={(e) => setNewIndustryName(e.target.value)}
+                  maxLength={50}
+                  className="min-w-0 flex-1 rounded-2xl border border-[#d9eaf2] bg-[#f9fcfe] px-4 py-2.5 text-sm outline-none focus:border-[#62bde5]"
+                  placeholder="見つからない業界を追加"
+                />
+                <button
+                  type="button"
+                  onClick={addIndustry}
+                  className="shrink-0 rounded-2xl border border-[#cfe7f1] bg-white px-4 py-2.5 text-xs font-extrabold text-[#2f8fb7]"
+                >
+                  追加
+                </button>
+              </div>
+            </fieldset>
+
+            <label className={labelClass}>
+              事業内容 <span className="text-[#e56c6c]">*</span>
+              <textarea required maxLength={MAX_TEXT} value={fields.businessDescription} onChange={(e) => updateField("businessDescription", e.target.value)} className={inputClass} rows={4} placeholder="どんな事業をしている会社か、簡潔に入力してください" />
+              <span className={helpClass}>200文字以内</span>
+            </label>
+
+            <label className={labelClass}>
+              企業プロフィール
+              <textarea maxLength={MAX_TEXT} value={fields.companyProfile} onChange={(e) => updateField("companyProfile", e.target.value)} className={inputClass} rows={4} placeholder="会社の特徴、強み、交流会で話したいことなど" />
+              <span className={helpClass}>200文字以内</span>
+            </label>
+
+            <div className="grid gap-5 sm:grid-cols-2">
+              <label className={labelClass}>
+                電話番号
+                <input value={fields.companyPhone} onChange={(e) => updateField("companyPhone", e.target.value)} type="tel" maxLength={25} pattern="[0-9+() -]{8,25}" className={inputClass} placeholder="0568-00-0000" />
+                <span className="mt-2 flex items-center gap-2 text-xs font-bold text-[#607783]">
+                  <input type="checkbox" checked={showCompanyPhone} onChange={(e) => setShowCompanyPhone(e.target.checked)} />
+                  この企業電話番号を公開する
+                </span>
+              </label>
+              <label className={labelClass}>
+                郵便番号
+                <input value={fields.postalCode} onChange={(e) => updateField("postalCode", e.target.value)} maxLength={8} pattern="\d{3}-?\d{4}" className={inputClass} placeholder="484-0000" />
+              </label>
+            </div>
+
+            <label className={labelClass}>
+              住所
+              <input value={fields.address} onChange={(e) => updateField("address", e.target.value)} maxLength={MAX_TEXT} className={inputClass} placeholder="愛知県犬山市..." />
+              <span className="mt-2 flex items-center gap-2 text-xs font-bold text-[#607783]">
+                <input type="checkbox" checked={showCompanyAddress} onChange={(e) => setShowCompanyAddress(e.target.checked)} />
+                この会社住所を公開する
+              </span>
+            </label>
+
+            <label className={labelClass}>
+              Webサイト
+              <input value={fields.websiteUrl} onChange={(e) => updateField("websiteUrl", e.target.value)} type="url" maxLength={MAX_TEXT} className={inputClass} placeholder="https://..." />
+            </label>
+          </div>
+        </section>
+      ) : (
+        <section className="rounded-[28px] border border-[#e1eef4] bg-white p-5 shadow-[0_10px_28px_rgba(50,99,121,0.07)] sm:p-7">
+          <div className="flex items-center gap-3">
+            <span className="grid h-11 w-11 place-items-center rounded-[18px] bg-[#e5f7ff] text-[#249ed1]">
+              <Icon name="search" className="h-6 w-6" />
             </span>
+            <div>
+              <p className="text-[11px] font-extrabold tracking-[0.14em] text-[#55afd4]">STEP 1</p>
+              <h2 className="font-extrabold">登録済み企業を探す</h2>
+            </div>
+          </div>
+
+          <div className="mt-5 flex gap-2">
+            <input
+              value={companyQuery}
+              onChange={(e) => setCompanyQuery(e.target.value)}
+              className="min-w-0 flex-1 rounded-2xl border border-[#d9eaf2] bg-[#f9fcfe] px-4 py-3 text-sm outline-none focus:border-[#62bde5]"
+              placeholder="企業名を入力"
+            />
+            <button type="button" onClick={searchCompanies} className="shrink-0 rounded-2xl bg-[#4db7e5] px-4 py-3 text-sm font-extrabold text-white">
+              検索
+            </button>
+          </div>
+
+          {companyResults.length > 0 ? (
+            <div className="mt-4 grid gap-2">
+              {companyResults.map((company) => (
+                <button
+                  type="button"
+                  key={company.id}
+                  onClick={() => {
+                    setSelectedCompany(company);
+                    setError("");
+                  }}
+                  className={`rounded-2xl border p-4 text-left transition ${
+                    selectedCompany?.id === company.id
+                      ? "border-[#4db7e5] bg-[#effaff]"
+                      : "border-[#dfeaf0] bg-white"
+                  }`}
+                >
+                  <p className="font-extrabold">{company.name}</p>
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {company.industries.map((industry) => (
+                      <span key={industry.id} className="rounded-full bg-[#e7f7ff] px-2.5 py-1 text-[10px] font-extrabold text-[#278fb9]">
+                        {industry.name}
+                      </span>
+                    ))}
+                  </div>
+                </button>
+              ))}
+            </div>
+          ) : null}
+
+          {selectedCompany ? (
+            <label className={`mt-5 block ${labelClass}`}>
+              企業参加コード（任意・認証バッジ用）
+              <input
+                value={companyAccessCode}
+                onChange={(e) => setCompanyAccessCode(e.target.value.toUpperCase())}
+                maxLength={20}
+                className={inputClass}
+                placeholder="後からでも入力できます"
+              />
+              <span className="mt-2 block text-xs font-medium leading-5 text-[#80939d]">
+                コードなしでも登録できます。正しいコードを入力すると認証済みバッジが付きます。登録後に「自分」ページから入力することもできます。
+              </span>
+            </label>
+          ) : null}
+        </section>
+      )}
+
+      <section className="rounded-[28px] border border-[#eee7c8] bg-[#fffdf3] p-5 shadow-[0_10px_28px_rgba(90,82,42,0.055)] sm:p-7">
+        <div className="flex items-center gap-3">
+          <span className="grid h-11 w-11 place-items-center rounded-[18px] bg-[#fff1a8] text-[#8d711a]">
+            <Icon name="user-plus" className="h-6 w-6" />
+          </span>
+          <div>
+            <p className="text-[11px] font-extrabold tracking-[0.14em] text-[#a68a31]">STEP 2</p>
+            <h2 className="font-extrabold">担当者情報</h2>
+          </div>
+        </div>
+
+        <div className="mt-6 grid gap-5">
+          <label className={labelClass}>
+            氏名 <span className="text-[#e56c6c]">*</span>
+            <input required maxLength={MAX_TEXT} value={fields.personName} onChange={(e) => updateField("personName", e.target.value)} className={inputClass} placeholder="山田 太郎" />
           </label>
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <label className="text-sm font-medium">
+          <div className="grid gap-5 sm:grid-cols-2">
+            <label className={labelClass}>
               部署
-              <input name="department" className={inputClass} />
+              <input value={fields.department} onChange={(e) => updateField("department", e.target.value)} maxLength={MAX_TEXT} className={inputClass} placeholder="営業部" />
             </label>
-            <label className="text-sm font-medium">
+            <label className={labelClass}>
               役職
-              <input name="position" className={inputClass} />
+              <input value={fields.position} onChange={(e) => updateField("position", e.target.value)} maxLength={MAX_TEXT} className={inputClass} placeholder="部長" />
             </label>
           </div>
 
-          <label className="text-sm font-medium">
-            電話番号
-            <input name="personPhone" className={inputClass} />
-          </label>
+          <div className="grid gap-5 sm:grid-cols-2">
+            <label className={labelClass}>
+              電話番号
+              <input value={fields.personPhone} onChange={(e) => updateField("personPhone", e.target.value)} type="tel" maxLength={25} pattern="[0-9+() -]{8,25}" className={inputClass} placeholder="090-0000-0000" />
+              <span className="mt-2 flex items-center gap-2 text-xs font-bold text-[#607783]">
+                <input type="checkbox" checked={showPersonPhone} onChange={(e) => setShowPersonPhone(e.target.checked)} />
+                この担当者電話番号を公開する
+              </span>
+            </label>
+            <label className={labelClass}>
+              メールアドレス
+              <input value={fields.email} onChange={(e) => updateField("email", e.target.value)} type="email" maxLength={MAX_TEXT} className={inputClass} placeholder="name@example.com" />
+            </label>
+          </div>
 
-          <label className="text-sm font-medium">
+          <label className={labelClass}>
             担当業務
-            <input
-              name="responsibility"
-              className={inputClass}
-              placeholder="営業、採用、開発など"
-            />
+            <input value={fields.responsibility} onChange={(e) => updateField("responsibility", e.target.value)} maxLength={MAX_TEXT} className={inputClass} placeholder="営業、採用、開発など" />
           </label>
 
-          <label className="text-sm font-medium">
+          <label className={labelClass}>
             自己紹介
-            <textarea
-              name="personProfile"
-              className={inputClass}
-              rows={4}
-            />
+            <textarea value={fields.personProfile} onChange={(e) => updateField("personProfile", e.target.value)} maxLength={MAX_TEXT} className={inputClass} rows={4} placeholder="話したいテーマや、担当している仕事について" />
+            <span className={helpClass}>200文字以内</span>
           </label>
         </div>
       </section>
 
-      {error && (
-        <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">
+      </div>
+
+      {review ? (
+        <div className="space-y-5">
+          <p className="rounded-2xl bg-[#e9f8ff] px-4 py-4 text-sm font-extrabold leading-6 text-[#357d99]">
+            外部に表示される情報を確認してください。電話番号・住所は公開設定がONの場合のみ表示されます。
+          </p>
+          {mode === "existing" ? (
+            <p className="rounded-2xl bg-[#fff8de] px-4 py-3 text-xs font-medium leading-6 text-[#75632e]">
+              登録前の企業検索には会社名と業界だけを表示します。
+              詳しい会社情報はプロフィール登録・ログイン後に確認できます。
+            </p>
+          ) : null}
+          <PublicProfilePreview
+            company={{
+              name: mode === "new" ? fields.companyName : selectedCompany?.name ?? "",
+              industries: mode === "new"
+                ? industryOptions.filter((industry) => industryIds.includes(industry.id)).map((industry) => industry.name)
+                : selectedCompany?.industries.map((industry) => industry.name) ?? [],
+              businessDescription: mode === "new" ? fields.businessDescription : selectedCompany?.businessDescription ?? "",
+              profile: mode === "new" ? fields.companyProfile : selectedCompany?.profile ?? "",
+              phone: mode === "new" ? fields.companyPhone : selectedCompany?.phone ?? "",
+              showPhone: mode === "new" ? showCompanyPhone : Boolean(selectedCompany?.showPhone),
+              postalCode: mode === "new" ? fields.postalCode : selectedCompany?.postalCode ?? "",
+              address: mode === "new" ? fields.address : selectedCompany?.address ?? "",
+              showAddress: mode === "new" ? showCompanyAddress : Boolean(selectedCompany?.showAddress),
+              websiteUrl: mode === "new" ? fields.websiteUrl : selectedCompany?.websiteUrl ?? "",
+            }}
+            person={{
+              name: fields.personName,
+              department: fields.department,
+              position: fields.position,
+              responsibility: fields.responsibility,
+              profile: fields.personProfile,
+              phone: fields.personPhone,
+              showPhone: showPersonPhone,
+            }}
+            onCompanyPhoneVisibilityChange={mode === "new" ? setShowCompanyPhone : undefined}
+            onCompanyAddressVisibilityChange={mode === "new" ? setShowCompanyAddress : undefined}
+            onPersonPhoneVisibilityChange={setShowPersonPhone}
+          />
+          <button type="button" onClick={() => { setReview(false); setError(""); }} className="w-full rounded-2xl border border-[#cfe2ea] bg-white px-5 py-3 text-sm font-extrabold text-[#46788d]">
+            入力画面に戻って修正する
+          </button>
+        </div>
+      ) : null}
+
+      {error ? (
+        <p className="rounded-[20px] border border-[#ffd7d7] bg-[#fff4f4] px-4 py-3.5 text-sm font-bold text-[#b94e4e]">
           {error}
         </p>
-      )}
+      ) : null}
 
       <button
         type="submit"
-        disabled={status === "uploading" || status === "saving"}
-        className="w-full rounded-2xl bg-slate-900 px-5 py-4 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
+        disabled={["searching", "saving"].includes(status)}
+        className="w-full rounded-[22px] bg-[#4db7e5] px-5 py-4 text-base font-extrabold text-white shadow-[0_12px_24px_rgba(55,166,214,0.28)] transition hover:bg-[#36a9da] disabled:cursor-not-allowed disabled:opacity-55"
       >
-        {status === "uploading"
-          ? "顔写真をアップロード中..."
-          : status === "saving"
-            ? "プロフィールを登録中..."
-            : "登録する"}
+        {status === "saving" ? "プロフィールを登録中..." : review ? "確認して登録する" : "プレビューで確認する"}
       </button>
     </form>
   );
