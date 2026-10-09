@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 type PersonValue = {
   id: string;
   name: string;
-  photoUrl: string;
   email: string;
   department: string;
   position: string;
@@ -47,13 +46,6 @@ export default function AdminPersonForm({ person }: { person: PersonValue }) {
 
   return (
     <form onSubmit={submit} className="mt-5 space-y-5">
-      <div className="flex items-center gap-4 rounded-2xl bg-[#f7fbfd] p-4">
-        <img src={person.photoUrl} alt="" className="h-20 w-20 rounded-2xl object-cover" />
-        <p className="text-xs leading-5 text-[#728792]">
-          顔写真の差し替えは本人のプロフィール編集画面から行えます。
-        </p>
-      </div>
-
       <label className="block text-sm font-extrabold">氏名 *
         <input required maxLength={200} value={value.name} onChange={(e) => setValue({ ...value, name: e.target.value })} className={inputClass} />
       </label>

@@ -59,7 +59,6 @@ export default async function EditMyProfilePage({
             },
             person: {
               name: person.name,
-              photoUrl: person.photoUrl,
               email: person.email ?? "",
               department: person.department ?? "",
               position: person.position ?? "",

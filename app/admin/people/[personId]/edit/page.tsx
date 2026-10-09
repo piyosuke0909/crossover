@@ -38,7 +38,6 @@ export default async function EditPersonPage({
             person={{
               id: person.id,
               name: person.name,
-              photoUrl: person.photoUrl,
               email: person.email ?? "",
               department: person.department ?? "",
               position: person.position ?? "",

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import PersonAvatar from "@/components/person-avatar";
 
 type PublicCompany = {
   name: string;
@@ -28,36 +28,19 @@ type PublicPerson = {
 export default function PublicProfilePreview({
   company,
   person,
-  photo,
-  existingPhotoUrl,
   onCompanyPhoneVisibilityChange,
   onCompanyAddressVisibilityChange,
   onPersonPhoneVisibilityChange,
 }: {
   company: PublicCompany;
   person: PublicPerson;
-  photo?: File | null;
-  existingPhotoUrl?: string;
   onCompanyPhoneVisibilityChange?: (visible: boolean) => void;
   onCompanyAddressVisibilityChange?: (visible: boolean) => void;
   onPersonPhoneVisibilityChange?: (visible: boolean) => void;
 }) {
-  const [previewPhoto, setPreviewPhoto] = useState("");
-
-  useEffect(() => {
-    if (!photo) return;
-
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === "string") {
-        setPreviewPhoto(reader.result);
-      }
-    };
-    reader.readAsDataURL(photo);
-    return () => reader.abort();
+  return () => reader.abort();
   }, [photo]);
 
-  const displayPhoto = photo ? previewPhoto : existingPhotoUrl || "";
 
   return (
     <section aria-label="公開プロフィールのプレビュー" className="space-y-5">
@@ -140,11 +123,7 @@ export default function PublicProfilePreview({
       <div className="rounded-[28px] border border-[#e1eef4] bg-white p-5 shadow-sm sm:p-7">
         <h2 className="text-xl font-extrabold">外部に表示される担当者情報</h2>
         <div className="mt-4 flex items-center gap-4">
-          {displayPhoto ? (
-            <img src={displayPhoto} alt="登録予定の顔写真" className="h-20 w-20 shrink-0 rounded-2xl object-cover" />
-          ) : (
-            <div className="grid h-20 w-20 shrink-0 place-items-center rounded-2xl bg-[#e8f7ff] text-xs text-[#7793a2]">顔写真</div>
-          )}
+          <PersonAvatar name={person.name || "担当者"} size="lg" />
           <div className="min-w-0">
             <h3 className="break-words text-lg font-extrabold">{person.name || "担当者名"}</h3>
             <p className="mt-1 text-xs font-semibold text-[#7d919b]">

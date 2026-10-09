@@ -1,7 +1,6 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import { upload } from "@vercel/blob/client";
 import { useRouter } from "next/navigation";
 import { Icon } from "@/components/icons";
 import PublicProfilePreview from "@/components/public-profile-preview";
@@ -27,8 +26,6 @@ type Props = {
 };
 
 const MAX_TEXT = 200;
-const MAX_PHOTO_BYTES = 5 * 1024 * 1024;
-const ALLOWED_PHOTO_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 
 const emptyFields = {
   companyName: "",
@@ -57,13 +54,12 @@ export default function ProfileRegisterForm({
   const [industryOptions, setIndustryOptions] = useState(industries);
   const [industryIds, setIndustryIds] = useState<string[]>([]);
   const [newIndustryName, setNewIndustryName] = useState("");
-  const [photo, setPhoto] = useState<File | null>(null);
   const [companyQuery, setCompanyQuery] = useState("");
   const [companyResults, setCompanyResults] = useState<CompanyResult[]>([]);
   const [selectedCompany, setSelectedCompany] = useState<CompanyResult | null>(null);
   const [companyAccessCode, setCompanyAccessCode] = useState("");
   const [status, setStatus] = useState<
-    "idle" | "searching" | "uploading" | "saving" | "error"
+    "idle" | "searching" | "saving" | "error"
   >("idle");
   const [error, setError] = useState("");
   const [showCompanyPhone, setShowCompanyPhone] = useState(false);
@@ -135,18 +131,6 @@ export default function ProfileRegisterForm({
     event.preventDefault();
     setError("");
 
-    if (!photo) {
-      setError("担当者の顔写真を選択してください。");
-      return;
-    }
-    if (!ALLOWED_PHOTO_TYPES.has(photo.type)) {
-      setError("顔写真はJPEG / PNG / WebPを選択してください。");
-      return;
-    }
-    if (photo.size > MAX_PHOTO_BYTES) {
-      setError("顔写真は5MB以内にしてください。");
-      return;
-    }
     if (mode === "new" && industryIds.length === 0) {
       setError("業界を1つ以上選択してください。");
       return;
@@ -162,17 +146,6 @@ export default function ProfileRegisterForm({
     }
 
     try {
-      setStatus("uploading");
-      const blob = await upload(
-        `events/${eventId}/people/${crypto.randomUUID()}-${photo.name}`,
-        photo,
-        {
-          access: "public",
-          handleUploadUrl: "/api/blob/upload",
-          clientPayload: JSON.stringify({ eventId }),
-        },
-      );
-
       setStatus("saving");
       const payload =
         mode === "existing"
@@ -181,7 +154,6 @@ export default function ProfileRegisterForm({
               companyAccessCode,
               person: {
                 name: fields.personName,
-                photoUrl: blob.url,
                 email: fields.email,
                 department: fields.department,
                 position: fields.position,
@@ -206,7 +178,6 @@ export default function ProfileRegisterForm({
               },
               person: {
                 name: fields.personName,
-                photoUrl: blob.url,
                 email: fields.email,
                 department: fields.department,
                 position: fields.position,
@@ -481,35 +452,6 @@ export default function ProfileRegisterForm({
             <input required maxLength={MAX_TEXT} value={fields.personName} onChange={(e) => updateField("personName", e.target.value)} className={inputClass} placeholder="山田 太郎" />
           </label>
 
-          <label className={labelClass}>
-            顔写真 <span className="text-[#e56c6c]">*</span>
-            <span className="mt-2 block rounded-[22px] border-2 border-dashed border-[#c9e4ef] bg-white p-5 text-center">
-              <span className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-[#e9f8ff] text-[#279fd1]">
-                <Icon name="person" className="h-6 w-6" />
-              </span>
-              <span className="mt-3 block text-sm font-extrabold text-[#3f5e6d]">
-                {photo ? photo.name : "顔がわかる写真を選択"}
-              </span>
-              <input
-                required
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                className="mt-4 block w-full text-xs text-[#718792] file:mr-3 file:rounded-full file:border-0 file:bg-[#4db7e5] file:px-4 file:py-2 file:font-extrabold file:text-white"
-                onChange={(e) => {
-                  const next = e.target.files?.[0] ?? null;
-                  if (next && (!ALLOWED_PHOTO_TYPES.has(next.type) || next.size > MAX_PHOTO_BYTES)) {
-                    e.target.value = "";
-                    setPhoto(null);
-                    setError(next.size > MAX_PHOTO_BYTES ? "顔写真は5MB以内にしてください。" : "顔写真はJPEG / PNG / WebPを選択してください。");
-                    return;
-                  }
-                  setPhoto(next);
-                  setError("");
-                }}
-              />
-            </span>
-          </label>
-
           <div className="grid gap-5 sm:grid-cols-2">
             <label className={labelClass}>
               部署
@@ -586,7 +528,6 @@ export default function ProfileRegisterForm({
               phone: fields.personPhone,
               showPhone: showPersonPhone,
             }}
-            photo={photo}
             onCompanyPhoneVisibilityChange={mode === "new" ? setShowCompanyPhone : undefined}
             onCompanyAddressVisibilityChange={mode === "new" ? setShowCompanyAddress : undefined}
             onPersonPhoneVisibilityChange={setShowPersonPhone}
@@ -605,14 +546,10 @@ export default function ProfileRegisterForm({
 
       <button
         type="submit"
-        disabled={["searching", "uploading", "saving"].includes(status)}
+        disabled={["searching", "saving"].includes(status)}
         className="w-full rounded-[22px] bg-[#4db7e5] px-5 py-4 text-base font-extrabold text-white shadow-[0_12px_24px_rgba(55,166,214,0.28)] transition hover:bg-[#36a9da] disabled:cursor-not-allowed disabled:opacity-55"
       >
-        {status === "uploading"
-          ? "顔写真をアップロード中..."
-          : status === "saving"
-            ? "プロフィールを登録中..."
-            : review ? "確認して登録する" : "プレビューで確認する"}
+        {status === "saving" ? "プロフィールを登録中..." : review ? "確認して登録する" : "プレビューで確認する"}
       </button>
     </form>
   );
