@@ -55,3 +55,22 @@ test("long user text has global wrapping and 200 character limit", () => {
   assert.match(read("app/globals.css"), /overflow-wrap: anywhere/);
   assert.match(read("lib/profile-validation.ts"), /MAX_PROFILE_TEXT_LENGTH = 200/);
 });
+
+test("original admin dashboard layout and management actions remain intact", () => {
+  const source = read("app/admin/page.tsx");
+  assert.ok(source.includes("管理者ポータル"));
+  assert.ok(source.includes("DASHBOARD"));
+  assert.ok(source.includes("stats.map"));
+  assert.ok(source.includes("企業管理"));
+  assert.ok(source.includes("担当者管理"));
+  assert.ok(source.includes("events.map"));
+  assert.ok(source.includes("会場QR"));
+  assert.ok(source.includes("企業CSV"));
+  assert.ok(source.includes("担当者CSV"));
+  assert.ok(source.includes("AdminEventActions"));
+  assert.doesNotMatch(source, /イベント作成|参加者移行|\/admin\/events\/new/);
+
+  const actions = read("components/admin-event-actions.tsx");
+  assert.ok(actions.includes("togglePublish"));
+  assert.doesNotMatch(actions, /async function remove|onClick=\{remove\}|method: "DELETE"/);
+});
