@@ -54,3 +54,14 @@ button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
     "GRAD" 0,
     "opsz" 24;
 }
+
+/* Long user text must never widen cards on small screens. */
+main :is(h1, h2, h3, h4, p, dd, a, span, label),
+article :is(h1, h2, h3, p, span) {
+  overflow-wrap: anywhere;
+}
+main :is(input, textarea, select) {
+  min-width: 0;
+  max-width: 100%;
+}
+textarea { overflow-wrap: anywhere; resize: vertical; }

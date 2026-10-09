@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useRef, useState } from "react";
+import { FormEvent, useState } from "react";
 import { upload } from "@vercel/blob/client";
 import { useRouter } from "next/navigation";
 import { Icon } from "@/components/icons";
@@ -24,8 +24,6 @@ type CompanyResult = {
 type Props = {
   eventId: string;
   industries: Industry[];
-  businessCardScanEnabled: boolean;
-  businessCardScanUsed: boolean;
 };
 
 const MAX_TEXT = 200;
@@ -52,11 +50,8 @@ const emptyFields = {
 export default function ProfileRegisterForm({
   eventId,
   industries,
-  businessCardScanEnabled,
-  businessCardScanUsed,
 }: Props) {
   const router = useRouter();
-  const cardInputRef = useRef<HTMLInputElement>(null);
   const [mode, setMode] = useState<"new" | "existing">("new");
   const [fields, setFields] = useState(emptyFields);
   const [industryOptions, setIndustryOptions] = useState(industries);
@@ -68,11 +63,9 @@ export default function ProfileRegisterForm({
   const [selectedCompany, setSelectedCompany] = useState<CompanyResult | null>(null);
   const [companyAccessCode, setCompanyAccessCode] = useState("");
   const [status, setStatus] = useState<
-    "idle" | "scanning" | "searching" | "uploading" | "saving" | "error"
+    "idle" | "searching" | "uploading" | "saving" | "error"
   >("idle");
   const [error, setError] = useState("");
-  const [scanNotice, setScanNotice] = useState<"success" | "error" | null>(null);
-  const [scanUsed, setScanUsed] = useState(businessCardScanUsed);
   const [showCompanyPhone, setShowCompanyPhone] = useState(false);
   const [showCompanyAddress, setShowCompanyAddress] = useState(false);
   const [showPersonPhone, setShowPersonPhone] = useState(false);
@@ -135,75 +128,6 @@ export default function ProfileRegisterForm({
       setNewIndustryName("");
     } catch (e) {
       setError(e instanceof Error ? e.message : "業界を追加できませんでした。");
-    }
-  }
-
-  async function scanBusinessCard(file: File) {
-    if (!businessCardScanEnabled || scanUsed) return;
-
-    setScanNotice(null);
-
-    if (!ALLOWED_PHOTO_TYPES.has(file.type) || file.size > MAX_PHOTO_BYTES) {
-      setScanNotice("error");
-      setError("");
-      return;
-    }
-
-    setError("");
-    setStatus("scanning");
-
-    try {
-      const body = new FormData();
-      body.append("image", file);
-      const response = await fetch("/api/business-card/scan", {
-        method: "POST",
-        body,
-      });
-      const data = (await response.json()) as Record<string, string> & {
-        error?: string;
-      };
-
-      if (!response.ok) {
-        throw new Error(data.error || "名刺の解析に失敗しました。");
-      }
-
-      setFields((current) => ({
-        ...current,
-        companyName: data.companyName || current.companyName,
-        companyPhone: data.companyPhone || current.companyPhone,
-        postalCode: data.postalCode || current.postalCode,
-        address: data.address || current.address,
-        websiteUrl: data.websiteUrl || current.websiteUrl,
-        personName: data.personName || current.personName,
-        email: data.email || current.email,
-        department: data.department || current.department,
-        position: data.position || current.position,
-        personPhone: data.personPhone || current.personPhone,
-      }));
-
-      if (data.industryHint) {
-        const hint = data.industryHint.toLowerCase();
-        const match = industryOptions.find(
-          (industry) =>
-            industry.name.toLowerCase().includes(hint) ||
-            hint.includes(industry.name.toLowerCase()),
-        );
-        if (match) {
-          setIndustryIds((current) =>
-            current.includes(match.id) ? current : [...current, match.id],
-          );
-        }
-      }
-
-      setScanUsed(true);
-      setScanNotice("success");
-      setStatus("idle");
-    } catch {
-      setStatus("error");
-      setScanNotice("error");
-      setError("");
-    } finally {
-      if (cardInputRef.current) cardInputRef.current.value = "";
     }
   }
 
@@ -370,77 +294,7 @@ export default function ProfileRegisterForm({
               </div>
             </div>
 
-            <div>
-              <input
-                ref={cardInputRef}
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                capture="environment"
-                className="hidden"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) scanBusinessCard(file);
-                }}
-              />
-              <button
-                type="button"
-                disabled={!businessCardScanEnabled || scanUsed || status === "scanning"}
-                onClick={() => cardInputRef.current?.click()}
-                title={
-                  scanUsed
-                    ? "このブラウザでは解析が1回成功したため再利用できません"
-                    : businessCardScanEnabled
-                    ? "名刺画像をAIで解析して入力します"
-                    : "GEMINI_API_KEYが設定されていないため利用できません"
-                }
-                className={`inline-flex min-h-10 items-center gap-2 rounded-2xl border px-3.5 py-2 text-xs font-extrabold transition ${
-                  businessCardScanEnabled && !scanUsed
-                    ? "border-[#cde7f2] bg-[#f1faff] text-[#278fb9]"
-                    : "cursor-not-allowed border-[#e2e7e9] bg-[#f1f3f4] text-[#a2adb2]"
-                } disabled:opacity-70`}
-              >
-                <Icon name="sparkles" className="h-4 w-4" />
-                {status === "scanning" ? "名刺を解析中..." : scanUsed ? "名刺解析は利用済み" : "名刺から入力"}
-              </button>
-            </div>
           </div>
-
-          <p className="mt-3 rounded-2xl bg-[#f7fbfd] px-4 py-3 text-xs leading-5 text-[#6f8490]">
-            名刺画像は入力補助のためAI解析へ送信され、CrossoverのBlobやDBには保存しません。解析結果は登録前に確認できます。
-          </p>
-
-          {status === "scanning" ? (
-            <div role="status" aria-live="polite" className="mt-3 flex items-center gap-3 rounded-2xl border border-[#cfe7f2] bg-[#effaff] px-4 py-4">
-              <span className="h-5 w-5 shrink-0 animate-spin rounded-full border-[3px] border-[#b7e5f6] border-t-[#279fd1]" />
-              <span className="text-xs font-bold leading-6 text-[#42768c]">
-                AIが名刺を解析しています。混雑時は時間がかかる場合があります。しばらくお待ちください。
-              </span>
-            </div>
-          ) : null}
-
-          {!businessCardScanEnabled ? (
-            <p className="mt-3 rounded-2xl border border-[#e2e7e9] bg-[#f4f5f6] px-4 py-3 text-xs font-bold text-[#87949a]">
-              名刺解析は現在利用できません。
-            </p>
-          ) : null}
-
-          {scanUsed && scanNotice !== "success" && businessCardScanEnabled ? (
-            <p className="mt-3 rounded-2xl bg-[#f3f5f6] px-4 py-3 text-xs font-bold text-[#71838c]">
-              名刺解析はこのブラウザで利用済みです。入力内容は手動で修正できます。
-            </p>
-          ) : null}
-
-          {scanNotice === "success" ? (
-            <p className="mt-3 rounded-2xl border border-[#cfe9d8] bg-[#eefaf2] px-4 py-3 text-sm font-extrabold text-[#4b805d]">
-              解析が成功しました。
-            </p>
-          ) : null}
-
-          {scanNotice === "error" ? (
-            <p className="mt-3 rounded-2xl border border-[#ffd7d7] bg-[#fff4f4] px-4 py-3 text-sm font-extrabold text-[#b94e4e]">
-              エラーが発生しました。
-            </p>
-          ) : null}
 
           <div className="mt-6 grid gap-5">
             <label className={labelClass}>
@@ -745,7 +599,7 @@ export default function ProfileRegisterForm({
 
       <button
         type="submit"
-        disabled={["scanning", "searching", "uploading", "saving"].includes(status)}
+        disabled={["searching", "uploading", "saving"].includes(status)}
         className="w-full rounded-[22px] bg-[#4db7e5] px-5 py-4 text-base font-extrabold text-white shadow-[0_12px_24px_rgba(55,166,214,0.28)] transition hover:bg-[#36a9da] disabled:cursor-not-allowed disabled:opacity-55"
       >
         {status === "uploading"
