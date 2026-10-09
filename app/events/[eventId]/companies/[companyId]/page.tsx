@@ -1,3 +1,4 @@
+import PersonAvatar from "@/components/person-avatar";
 import { notFound, redirect } from "next/navigation";
 import prisma from "@/lib/prisma";
 import AppShell from "@/components/app-shell";
@@ -181,11 +182,7 @@ export default async function CompanyDetailPage({
                 className="min-w-0 overflow-hidden rounded-[28px] border border-[#e1eef4] bg-white shadow-[0_10px_28px_rgba(50,99,121,0.075)]"
               >
                 <div className="relative bg-[#eef9fe] p-3 pb-0">
-                  <img
-                    src={person.photoUrl}
-                    alt={person.name}
-                    className="h-56 w-full rounded-[22px] object-cover object-center"
-                  />
+<PersonAvatar name={person.name} size="xl" />
                   <span className="absolute bottom-3 left-6 max-w-[calc(100%-3rem)] truncate rounded-full bg-white/95 px-3 py-1.5 text-[11px] font-extrabold text-[#2c90ba] shadow-sm">
                     {person.position ||
                       person.department ||

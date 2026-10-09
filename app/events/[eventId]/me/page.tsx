@@ -1,3 +1,4 @@
+import PersonAvatar from "@/components/person-avatar";
 import Link from "next/link";
 import QRCode from "qrcode";
 import AppShell from "@/components/app-shell";
@@ -92,11 +93,7 @@ export default async function MyQrPage({
 
         <section className="mt-5 overflow-hidden rounded-[32px] border border-[#e1eef4] bg-white shadow-[0_16px_40px_rgba(50,99,121,0.1)]">
           <div className="bg-gradient-to-br from-[#e5f7ff] to-[#fff9dc] p-6 text-center">
-            <img
-              src={person.photoUrl}
-              alt={person.name}
-              className="mx-auto h-20 w-20 rounded-[26px] border-4 border-white object-cover shadow-sm"
-            />
+<PersonAvatar name={person.name} size="lg" />
             <h2 className="mt-3 text-xl font-extrabold">{person.name}</h2>
             <p className="mt-1 text-sm font-bold text-[#607783]">
               {person.company.name}

@@ -1,3 +1,4 @@
+import PersonAvatar from "@/components/person-avatar";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import prisma from "@/lib/prisma";
@@ -102,11 +103,7 @@ export default async function EventPage({
 
             {participant ? (
               <div className="mt-5 inline-flex items-center gap-2 rounded-2xl bg-white/18 px-3 py-2 text-xs font-bold backdrop-blur">
-                <img
-                  src={participant.person.photoUrl}
-                  alt=""
-                  className="h-7 w-7 rounded-full object-cover"
-                />
+<PersonAvatar name={participant.person.name} size="xs" />
                 {participant.person.name} として参加中
               </div>
             ) : null}

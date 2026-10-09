@@ -1,3 +1,4 @@
+import PersonAvatar from "@/components/person-avatar";
 import Link from "next/link";
 import prisma from "@/lib/prisma";
 import BackLink from "@/components/back-link";
@@ -70,7 +71,7 @@ export default async function AdminPeoplePage({
               }`}
             >
               <div className="flex min-w-0 items-center gap-4">
-                <img src={person.photoUrl} alt={person.name} className="h-16 w-16 shrink-0 rounded-[20px] object-cover" />
+<PersonAvatar name={person.name} size="md" />
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
                     <h2 className="truncate font-extrabold">{person.name}</h2>

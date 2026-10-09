@@ -1,3 +1,4 @@
+import PersonAvatar from "@/components/person-avatar";
 import Link from "next/link";
 import AppShell from "@/components/app-shell";
 import CompanyVerifiedBadge from "@/components/company-verified-badge";
@@ -83,11 +84,7 @@ export default async function MetPeoplePage({
               className="rounded-[26px] border border-[#e1eef4] bg-white p-4 shadow-[0_9px_26px_rgba(50,99,121,0.07)]"
             >
               <div className="flex items-center gap-4">
-                <img
-                  src={metPerson.photoUrl}
-                  alt={metPerson.name}
-                  className="h-16 w-16 rounded-[22px] object-cover"
-                />
+<PersonAvatar name={metPerson.name} size="md" />
                 <div className="min-w-0">
                   <h2 className="truncate font-extrabold">
                     {metPerson.name}

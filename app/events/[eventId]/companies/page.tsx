@@ -1,3 +1,4 @@
+import PersonAvatar from "@/components/person-avatar";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import prisma from "@/lib/prisma";
@@ -196,11 +197,7 @@ export default async function CompaniesPage({
                         key={person.id}
                         className="flex min-w-0 items-center gap-3 rounded-2xl bg-[#f8fbfc] p-2.5"
                       >
-                        <img
-                          src={person.photoUrl}
-                          alt={person.name}
-                          className="h-11 w-11 shrink-0 rounded-2xl object-cover"
-                        />
+<PersonAvatar name={person.name} size="sm" />
                         <Link
                           href={`/events/${event.id}/companies/${company.id}`}
                           className="min-w-0 flex-1"

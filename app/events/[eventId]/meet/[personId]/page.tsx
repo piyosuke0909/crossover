@@ -1,3 +1,4 @@
+import PersonAvatar from "@/components/person-avatar";
 import { notFound, redirect } from "next/navigation";
 import prisma from "@/lib/prisma";
 import AppShell from "@/components/app-shell";
@@ -46,11 +47,7 @@ export default async function MeetPersonPage({
           <p className="text-xs font-extrabold tracking-[0.16em] text-[#4aaed9]">
             QR CHECK
           </p>
-          <img
-            src={person.photoUrl}
-            alt={person.name}
-            className="mx-auto mt-5 h-28 w-28 rounded-[32px] object-cover shadow-sm"
-          />
+<PersonAvatar name={person.name} size="xl" />
           <h1 className="mt-4 text-2xl font-extrabold">{person.name}</h1>
                   {person.companyVerifiedAt ? (
                     <div className="mt-2 inline-flex"><CompanyVerifiedBadge compact /></div>
