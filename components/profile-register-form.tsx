@@ -11,7 +11,7 @@ type Industry = { id: string; name: string };
 type CompanyResult = {
   id: string;
   name: string;
-  businessDescription: string;
+  businessDescription?: string;
   industries: Industry[];
   phone?: string;
   showPhone?: boolean;
@@ -556,6 +556,12 @@ export default function ProfileRegisterForm({
           <p className="rounded-2xl bg-[#e9f8ff] px-4 py-4 text-sm font-extrabold leading-6 text-[#357d99]">
             外部に表示される情報を確認してください。電話番号・住所は公開設定がONの場合のみ表示されます。
           </p>
+          {mode === "existing" ? (
+            <p className="rounded-2xl bg-[#fff8de] px-4 py-3 text-xs font-medium leading-6 text-[#75632e]">
+              登録前の企業検索には会社名と業界だけを表示します。
+              詳しい会社情報はプロフィール登録・ログイン後に確認できます。
+            </p>
+          ) : null}
           <PublicProfilePreview
             company={{
               name: mode === "new" ? fields.companyName : selectedCompany?.name ?? "",

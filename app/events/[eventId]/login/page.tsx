@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import prisma from "@/lib/prisma";
 import AppShell from "@/components/app-shell";
@@ -43,6 +44,17 @@ export default async function ParticipantLoginPage({
           </p>
 
           <ParticipantLoginForm eventId={eventId} />
+          <div className="mt-6 border-t border-[#e1eef4] pt-5 text-center">
+            <p className="text-sm font-semibold text-[#607783]">
+              まだ登録していない方はこちら
+            </p>
+            <Link
+              href={`/events/${eventId}/register`}
+              className="mt-3 inline-flex w-full items-center justify-center rounded-2xl border border-[#d4e8f1] bg-[#f1faff] px-5 py-3 text-sm font-extrabold text-[#238fbd]"
+            >
+              新しくプロフィールを登録する
+            </Link>
+          </div>
         </section>
       </main>
     </AppShell>

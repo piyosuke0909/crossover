@@ -16,10 +16,39 @@ test("permanent event rejects create, transfer and delete endpoints", () => {
   assert.match(read("app/api/admin/events/[eventId]/route.ts"), /常設の交流ページは削除できません/);
 });
 
-test("guest company search page does not require an account", () => {
-  const s = read("app/events/[eventId]/companies/page.tsx");
-  assert.match(s, /登録・ログインなし/);
-  assert.doesNotMatch(s, /redirect\(\`\/events\/\$\{eventId\}\/login/);
+test("company directory and QR profile pages require participant sessions", () => {
+  const routes = [
+    "app/events/[eventId]/companies/page.tsx",
+    "app/events/[eventId]/companies/[companyId]/page.tsx",
+    "app/events/[eventId]/meet/[personId]/page.tsx",
+  ];
+  for (const path of routes) {
+    const source = read(path);
+    assert.ok(source.includes("getCurrentParticipant(eventId)"), path);
+    assert.ok(source.includes('if (!participant) redirect('), path);
+    assert.ok(source.indexOf("getCurrentParticipant(eventId)") < source.indexOf("prisma."), path);
+  }
+});
+
+test("public signup company lookup returns only names and industries", () => {
+  const source = read("app/api/companies/search/route.ts");
+  assert.ok(source.includes("name: company.name"));
+  assert.ok(source.includes("industries: company.industries"));
+  assert.doesNotMatch(source, /businessDescription|postalCode|showPhone|showAddress|photoUrl|person:/);
+});
+
+test("participant session rejects hidden or invalid memberships", () => {
+  const source = read("lib/participant-session.ts");
+  assert.ok(source.includes("session.person.isHidden"));
+  assert.ok(source.includes("session.person.company.isHidden"));
+  assert.ok(source.includes("session.person.eventPeople.length === 0"));
+  assert.ok(source.includes("!session.event.isActive"));
+});
+
+test("guest entry offers registration and login instead of company directory", () => {
+  const source = read("app/events/[eventId]/page.tsx");
+  assert.ok(source.includes("企業を探す（要ログイン）"));
+  assert.ok(read("app/events/[eventId]/login/page.tsx").includes("新しくプロフィールを登録する"));
 });
 
 test("long user text has global wrapping and 200 character limit", () => {

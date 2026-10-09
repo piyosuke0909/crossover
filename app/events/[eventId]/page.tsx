@@ -54,10 +54,10 @@ export default async function EventPage({
       ]
     : [
         {
-          href: `/events/${event.id}/companies`,
-          title: "企業を探す",
-          sub: "会社・担当者から検索",
-          icon: "search" as const,
+          href: `/events/${event.id}/login`,
+          title: "企業を探す（要ログイン）",
+          sub: "登録済みの方はこちら",
+          icon: "lock" as const,
           iconClass: "bg-[#e4f7ff] text-[#249ed1]",
         },
         {
