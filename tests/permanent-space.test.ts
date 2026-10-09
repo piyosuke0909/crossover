@@ -56,23 +56,20 @@ test("long user text has global wrapping and 200 character limit", () => {
   assert.match(read("lib/profile-validation.ts"), /MAX_PROFILE_TEXT_LENGTH = 200/);
 });
 
-test("original admin dashboard layout and management actions remain intact", () => {
+test("admin dashboard keeps essential management and hides event/community section", () => {
   const source = read("app/admin/page.tsx");
   assert.ok(source.includes("管理者ポータル"));
   assert.ok(source.includes("DASHBOARD"));
   assert.ok(source.includes("stats.map"));
   assert.ok(source.includes("企業管理"));
   assert.ok(source.includes("担当者管理"));
-  assert.ok(source.includes("events.map"));
   assert.ok(source.includes("会場QR"));
   assert.ok(source.includes("企業CSV"));
   assert.ok(source.includes("参加者CSV"));
-  assert.ok(source.includes("AdminEventActions"));
-  assert.doesNotMatch(source, /イベント作成|参加者移行|\/admin\/events\/new/);
+  assert.doesNotMatch(source, /イベント作成|参加者移行|\/admin\/events\/new|COMMUNITY|交流スペース|events\.map/);
+  assert.ok(source.includes("getPrimaryEvent"));
+  assert.ok(source.includes("今日も、つながりを育てよう"));
 
-  const actions = read("components/admin-event-actions.tsx");
-  assert.ok(actions.includes("togglePublish"));
-  assert.doesNotMatch(actions, /async function remove|onClick=\{remove\}|method: "DELETE"/);
 });
 
 test("photo upload is retired and no face photo is required for registration", () => {
@@ -110,8 +107,9 @@ test("admin pages share blue and yellow home styling while keeping operations", 
   const people = read("app/admin/people/page.tsx");
   assert.match(dashboard, /bg-\[#4db7e5\]/);
   assert.match(dashboard, /bg-\[#fff0a8\]/);
-  assert.match(dashboard, /AdminEventActions/);
-  assert.match(dashboard, /企業CSV|参加者CSV/);
+  assert.match(dashboard, /企業CSV/);
+  assert.match(dashboard, /参加者CSV/);
+  assert.doesNotMatch(dashboard, /常設の交流ページ|交流スペース|COMMUNITY/);
   assert.match(companies, /from-\[#4db7e5\]/);
   assert.match(people, /from-\[#4db7e5\]/);
 });
