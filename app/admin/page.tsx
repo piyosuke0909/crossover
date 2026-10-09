@@ -22,7 +22,6 @@ export default async function AdminPage() {
     { href: "/admin/people", title: "担当者管理", description: "登録担当者の検索・編集・非表示", icon: "users" as const, color: "bg-[#fff3b8] text-[#947619]" },
     ...(event ? [
       { href: `/admin/events/${event.id}/qr`, title: "会場QR", description: "繰り返し使えるQRコード", icon: "qr" as const, color: "bg-[#e9f8f0] text-[#4b956b]" },
-      { href: `/admin/events/${event.id}/edit`, title: "ページ設定", description: "紹介文・会場・公開設定", icon: "pencil" as const, color: "bg-[#f1ecff] text-[#8771b6]" },
       { href: `/api/admin/events/${event.id}/export/companies`, title: "企業CSV", description: "企業一覧をCSVで保存", icon: "download" as const, color: "bg-[#e6f7ff] text-[#249ed1]" },
       { href: `/api/admin/events/${event.id}/export/participants`, title: "参加者CSV", description: "担当者名簿をCSVで保存", icon: "download" as const, color: "bg-[#fff3b8] text-[#947619]" },
     ] : []),
