@@ -140,7 +140,7 @@ export async function POST(
       data: {
         companyId: resolvedCompanyId,
         name: person.name,
-        photoUrl: person.photoUrl,
+        photoUrl: "", // Legacy NOT NULL column: no image is uploaded or requested.
         companyVerifiedAt: validation.data.mode === "existing" && companyAccessCode
           ? new Date()
           : null,

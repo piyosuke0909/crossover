@@ -1,5 +1,4 @@
 export const MAX_PROFILE_TEXT_LENGTH = 200;
-export const MAX_FACE_PHOTO_BYTES = 5 * 1024 * 1024;
 
 const PHONE_PATTERN = /^[0-9+()\-\s]{8,25}$/;
 const POSTAL_CODE_PATTERN = /^\d{3}-?\d{4}$/;
@@ -22,7 +21,6 @@ type ProfileBody = {
   };
   person?: {
     name?: unknown;
-    photoUrl?: unknown;
     email?: unknown;
     department?: unknown;
     position?: unknown;
@@ -58,9 +56,8 @@ function validHttpUrl(value: string) {
   }
 }
 
-export function validatePersonFields(person: ProfileBody["person"], requirePhoto: boolean) {
+export function validatePersonFields(person: ProfileBody["person"]) {
   const name = text(person?.name);
-  const photoUrl = text(person?.photoUrl);
   const email = optionalText(person?.email);
   const department = optionalText(person?.department);
   const position = optionalText(person?.position);
@@ -70,9 +67,6 @@ export function validatePersonFields(person: ProfileBody["person"], requirePhoto
   const profile = optionalText(person?.profile);
 
   if (!name) return { ok: false as const, error: "氏名は必須です。" };
-  if (requirePhoto && !photoUrl) {
-    return { ok: false as const, error: "顔写真は必須です。" };
-  }
 
   for (const [label, value] of [
     ["氏名", name],
@@ -96,7 +90,7 @@ export function validatePersonFields(person: ProfileBody["person"], requirePhoto
 
   return {
     ok: true as const,
-    data: { name, photoUrl, email, department, position, phone, showPhone, responsibility, profile },
+    data: { name, email, department, position, phone, showPhone, responsibility, profile },
   };
 }
 
@@ -159,7 +153,7 @@ export function validateCompanyFields(company: ProfileBody["company"]) {
 }
 
 export function validateRegistrationBody(body: ProfileBody) {
-  const person = validatePersonFields(body.person, true);
+  const person = validatePersonFields(body.person);
   if (!person.ok) return person;
 
   const companyId = text(body.companyId);
@@ -191,7 +185,7 @@ export function validateRegistrationBody(body: ProfileBody) {
 }
 
 export function validateProfileEditBody(body: ProfileBody) {
-  const person = validatePersonFields(body.person, false);
+  const person = validatePersonFields(body.person);
   if (!person.ok) return person;
 
   const company = validateCompanyFields(body.company);

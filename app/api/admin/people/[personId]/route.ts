@@ -22,14 +22,14 @@ export async function PATCH(
     return NextResponse.json({ success: true });
   }
 
-  const validation = validatePersonFields(body.person, false);
+  const validation = validatePersonFields(body.person);
   if (!validation.ok) {
     return NextResponse.json({ error: validation.error }, { status: 400 });
   }
 
   const existing = await prisma.person.findUnique({
     where: { id: personId },
-    select: { photoUrl: true, email: true },
+    select: { email: true },
   });
   if (!existing) {
     return NextResponse.json({ error: "担当者が見つかりません。" }, { status: 404 });
@@ -44,7 +44,6 @@ export async function PATCH(
     where: { id: personId },
     data: {
       name: person.name,
-      photoUrl: person.photoUrl || existing.photoUrl,
       email: person.email,
       ...(emailChanged
         ? {

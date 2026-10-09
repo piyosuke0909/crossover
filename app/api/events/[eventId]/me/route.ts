@@ -35,7 +35,6 @@ export async function PATCH(
 
   const personValidation = validatePersonFields(
     body?.person as Parameters<typeof validatePersonFields>[0],
-    false,
   );
   if (!personValidation.ok) {
     return NextResponse.json({ error: personValidation.error }, { status: 400 });
@@ -66,7 +65,6 @@ export async function PATCH(
     }
   }
 
-  const photoUrl = person.photoUrl || participant.person.photoUrl;
   const previousEmail = participant.person.email?.trim().toLowerCase() ?? "";
   const nextEmail = person.email?.trim().toLowerCase() ?? "";
   const emailChanged = previousEmail !== nextEmail;
@@ -103,7 +101,6 @@ export async function PATCH(
       where: { id: participant.personId },
       data: {
         name: person.name,
-        photoUrl,
         email: person.email,
         ...(emailChanged
           ? {
