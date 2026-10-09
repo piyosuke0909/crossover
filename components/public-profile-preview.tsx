@@ -38,10 +38,6 @@ export default function PublicProfilePreview({
   onCompanyAddressVisibilityChange?: (visible: boolean) => void;
   onPersonPhoneVisibilityChange?: (visible: boolean) => void;
 }) {
-  return () => reader.abort();
-  }, [photo]);
-
-
   return (
     <section aria-label="公開プロフィールのプレビュー" className="space-y-5">
       {(onCompanyPhoneVisibilityChange ||
