@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import prisma from "@/lib/prisma";
 import AppShell from "@/components/app-shell";
 import BackLink from "@/components/back-link";
@@ -19,6 +19,9 @@ export default async function CompaniesPage({
   searchParams: Promise<{ q?: string; industry?: string }>;
 }) {
   const { eventId } = await params;
+  const participant = await getCurrentParticipant(eventId);
+  if (!participant) redirect(`/events/${eventId}/login`);
+
   const filters = await searchParams;
   const q = filters.q?.trim() ?? "";
   const industryId = filters.industry?.trim() ?? "";
@@ -30,7 +33,7 @@ export default async function CompaniesPage({
 
   if (!event?.isActive) notFound();
 
-  const [industries, rows, participant] = await Promise.all([
+  const [industries, rows] = await Promise.all([
     prisma.industry.findMany({
       where: { isActive: true },
       orderBy: { name: "asc" },
@@ -62,7 +65,6 @@ export default async function CompaniesPage({
       },
       orderBy: { joinedAt: "asc" },
     }),
-    getCurrentParticipant(eventId),
   ]);
 
   const metPersonIds = new Set(
@@ -95,8 +97,7 @@ export default async function CompaniesPage({
             {rows.length}社が見つかりました
           </p>
           <p className="mt-2 break-words text-xs font-medium leading-6 text-[#607783]">
-            登録・ログインなしで企業や担当者を検索できます。
-            「話した人」の記録にはプロフィール登録が必要です。
+            ログインした参加者だけが企業や担当者を検索できます。
           </p>
         </div>
 

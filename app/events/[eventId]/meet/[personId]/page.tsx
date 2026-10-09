@@ -1,8 +1,9 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import prisma from "@/lib/prisma";
 import AppShell from "@/components/app-shell";
 import CompanyVerifiedBadge from "@/components/company-verified-badge";
 import MeetRegistrar from "@/components/meet-registrar";
+import { getCurrentParticipant } from "@/lib/participant-session";
 
 export const dynamic = "force-dynamic";
 
@@ -12,6 +13,8 @@ export default async function MeetPersonPage({
   params: Promise<{ eventId: string; personId: string }>;
 }) {
   const { eventId, personId: qrToken } = await params;
+  const participant = await getCurrentParticipant(eventId);
+  if (!participant) redirect(`/events/${eventId}/login`);
 
   const participation = await prisma.eventPerson.findFirst({
     where: { eventId, qrToken },

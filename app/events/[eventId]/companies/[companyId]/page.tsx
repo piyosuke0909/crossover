@@ -1,9 +1,10 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import prisma from "@/lib/prisma";
 import AppShell from "@/components/app-shell";
 import BackLink from "@/components/back-link";
 import { Icon } from "@/components/icons";
 import CompanyVerifiedBadge from "@/components/company-verified-badge";
+import { getCurrentParticipant } from "@/lib/participant-session";
 
 export const dynamic = "force-dynamic";
 
@@ -13,6 +14,8 @@ export default async function CompanyDetailPage({
   params: Promise<{ eventId: string; companyId: string }>;
 }) {
   const { eventId, companyId } = await params;
+  const participant = await getCurrentParticipant(eventId);
+  if (!participant) redirect(`/events/${eventId}/login`);
 
   const participation = await prisma.eventCompany.findUnique({
     where: {

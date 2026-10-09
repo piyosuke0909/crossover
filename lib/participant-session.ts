@@ -63,6 +63,7 @@ export async function getCurrentParticipant(eventId: string) {
   const session = await prisma.participantSession.findUnique({
     where: { tokenHash: hashParticipantToken(token) },
     include: {
+      event: { select: { isActive: true, deletedAt: true } },
       person: {
         include: {
           company: {
@@ -85,7 +86,12 @@ export async function getCurrentParticipant(eventId: string) {
   if (
     !session ||
     session.eventId !== eventId ||
-    session.expiresAt.getTime() <= Date.now()
+    session.expiresAt.getTime() <= Date.now() ||
+    !session.event.isActive ||
+    Boolean(session.event.deletedAt) ||
+    session.person.isHidden ||
+    session.person.company.isHidden ||
+    session.person.eventPeople.length === 0
   ) {
     return null;
   }
