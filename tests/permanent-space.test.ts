@@ -66,7 +66,7 @@ test("original admin dashboard layout and management actions remain intact", () 
   assert.ok(source.includes("events.map"));
   assert.ok(source.includes("会場QR"));
   assert.ok(source.includes("企業CSV"));
-  assert.ok(source.includes("担当者CSV"));
+  assert.ok(source.includes("参加者CSV"));
   assert.ok(source.includes("AdminEventActions"));
   assert.doesNotMatch(source, /イベント作成|参加者移行|\/admin\/events\/new/);
 
