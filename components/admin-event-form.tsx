@@ -31,7 +31,7 @@ export default function AdminEventForm({
     const parsedDate = new Date(localDate);
 
     if (!localDate || Number.isNaN(parsedDate.getTime())) {
-      setError("開催日時を正しく入力してください。");
+      setError("日時設定が正しくありません。");
       setStatus("error");
       return;
     }
@@ -71,7 +71,7 @@ export default function AdminEventForm({
   return (
     <form onSubmit={handleSubmit} className="mt-6 space-y-5">
       <label className="block text-sm font-extrabold text-[#3d5663]">
-        イベント名 <span className="text-[#e56c6c]">*</span>
+        交流ページ名 <span className="text-[#e56c6c]">*</span>
         <input
           required
           maxLength={200}
@@ -82,16 +82,7 @@ export default function AdminEventForm({
         />
       </label>
 
-      <label className="block text-sm font-extrabold text-[#3d5663]">
-        開催日時 <span className="text-[#e56c6c]">*</span>
-        <input
-          required
-          type="datetime-local"
-          name="eventDate"
-          defaultValue={event?.eventDate ?? ""}
-          className={inputClass}
-        />
-      </label>
+      <input type="hidden" name="eventDate" defaultValue={event?.eventDate ?? ""} />
 
       <label className="block text-sm font-extrabold text-[#3d5663]">
         会場

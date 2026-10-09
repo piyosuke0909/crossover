@@ -94,6 +94,10 @@ export default async function CompaniesPage({
           <p className="mt-1.5 text-sm font-medium text-[#7a8e99]">
             {rows.length}社が見つかりました
           </p>
+          <p className="mt-2 break-words text-xs font-medium leading-6 text-[#607783]">
+            登録・ログインなしで企業や担当者を検索できます。
+            「話した人」の記録にはプロフィール登録が必要です。
+          </p>
         </div>
 
         <form className="mt-5 rounded-[26px] border border-[#e1eef4] bg-white p-4 shadow-[0_10px_28px_rgba(50,99,121,0.08)]">

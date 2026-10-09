@@ -29,7 +29,7 @@ export default async function AdminEventQrPage({
   if (!event) notFound();
 
   const origin = await getRequestOrigin();
-  const eventUrl = `${origin}/events/${event.id}`;
+  const eventUrl = `${origin}/`;
   const qrDataUrl = await QRCode.toDataURL(eventUrl, {
     width: 520,
     margin: 2,
@@ -70,7 +70,7 @@ export default async function AdminEventQrPage({
                   {event.name}
                 </h1>
                 <p className="mt-2 text-sm font-medium text-[#667d88]">
-                  交流会ごとに1つの会場QRです。
+                  このQRを常設で使い回せます。
                 </p>
               </div>
             </div>

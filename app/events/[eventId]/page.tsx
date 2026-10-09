@@ -85,19 +85,13 @@ export default async function EventPage({
 
           <div className="relative">
             <p className="text-xs font-bold tracking-[0.18em] text-white/80">
-              CROSSOVER EVENT
+              CROSSOVER
             </p>
             <h1 className="mt-2 max-w-2xl text-2xl font-extrabold leading-tight tracking-tight sm:text-3xl">
               {event.name}
             </h1>
 
             <div className="mt-5 flex flex-wrap gap-2.5 text-sm font-semibold">
-              <span className="inline-flex items-center gap-2 rounded-full bg-white/18 px-3 py-2 backdrop-blur">
-                <Icon name="calendar" className="h-4 w-4" />
-                {new Intl.DateTimeFormat("ja-JP", {
-                  dateStyle: "long",
-                }).format(event.eventDate)}
-              </span>
               {event.venue ? (
                 <span className="inline-flex items-center gap-2 rounded-full bg-white/18 px-3 py-2 backdrop-blur">
                   <Icon name="pin" className="h-4 w-4" />
@@ -155,7 +149,7 @@ export default async function EventPage({
               QUICK ACTIONS
             </p>
             <h2 className="mt-1 text-xl font-extrabold">
-              この交流会でできること
+              交流をはじめる
             </h2>
           </div>
 
@@ -194,7 +188,7 @@ export default async function EventPage({
               <span className="grid h-10 w-10 place-items-center rounded-2xl bg-[#fff4bf] text-[#92751b]">
                 <Icon name="briefcase" className="h-5 w-5" />
               </span>
-              <h2 className="font-extrabold">イベントについて</h2>
+              <h2 className="font-extrabold">交流スペースについて</h2>
             </div>
             <p className="mt-4 whitespace-pre-wrap text-sm leading-7 text-[#607783]">
               {event.description}

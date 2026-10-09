@@ -35,17 +35,19 @@ async function main() {
     });
   }
 
+  // Provision a permanent space only once; future seeds reuse it.
   await prisma.event.upsert({
     where: { slug: "crossover-demo" },
     update: {},
     create: {
-      name: "クロスオーバー企業交流会 Demo",
-      eventDate: new Date("2026-11-01T10:00:00+09:00"),
+      name: "クロスオーバー企業交流",
+      eventDate: new Date("2026-10-01T10:00:00+09:00"),
       venue: "犬山市",
-      description: "企業プロフィール登録・検索を確認するためのデモ交流会です。",
+      description: "お酒を嗜みながら、企業や担当者とのつながりを深める交流スペースです。",
       slug: "crossover-demo",
     },
   });
+
 }
 
 main()
